@@ -24,6 +24,7 @@
     --tag-bg:#e7f0fe;
     --shadow: 0 1px 2px rgba(20,45,90,.04);
     --radius: 10px;
+    --content-zoom: 1;
   }
   [data-theme="dark"]{
     --bg:#0b1220;
@@ -213,8 +214,8 @@
   .toc-sub li a.active{color:var(--primary); border-left-color:var(--primary); font-weight:600;}
 
   /* ---------- Content ---------- */
-  .content{margin-left:290px; flex:1; display:flex; justify-content:center; padding:36px 32px 120px; min-width:0;}
-  .content-inner{max-width:760px; width:100%; min-width:0; overflow-x:hidden; overflow-wrap:break-word; word-wrap:break-word;}
+  .content{margin-left:290px; flex:1; display:flex; justify-content:center; padding:36px 32px 120px; min-width:0; overflow-x:auto;}
+  .content-inner{max-width:760px; width:100%; min-width:0; overflow-x:hidden; overflow-wrap:break-word; word-wrap:break-word; zoom: var(--content-zoom, 1);}
   .content-inner h1, .content-inner h2, .content-inner h3, .content-inner p, .content-inner li{
     overflow-wrap:break-word; word-wrap:break-word; max-width:100%;
   }
@@ -354,6 +355,54 @@
     .exam-info .info-box{padding:10px 12px;}
     .exam-info .info-box .lbl{font-size:11.5px; line-height:1.45;}
     .content-inner h1, .content-inner h2{line-height:1.3;}
+  }
+
+  /* ---------- Desktop content zoom (hidden on mobile) ---------- */
+  .zoom-control{
+    position:fixed; right:24px; bottom:24px; z-index:45;
+    display:flex; align-items:center; gap:8px;
+    padding:8px 12px 8px 8px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:14px;
+    box-shadow:0 8px 28px rgba(20,45,90,.14);
+    user-select:none;
+  }
+  [data-theme="dark"] .zoom-control{ box-shadow:0 8px 28px rgba(0,0,0,.45); }
+  .zoom-btn{
+    width:28px; height:28px; border-radius:8px;
+    border:1px solid var(--border); background:var(--tag-bg); color:var(--text);
+    font-size:18px; font-weight:700; line-height:1; cursor:pointer; font-family:inherit;
+    display:flex; align-items:center; justify-content:center; padding:0; flex:none;
+  }
+  .zoom-btn:hover{border-color:var(--primary); color:var(--primary);}
+  .zoom-btn:disabled{opacity:.38; cursor:default; border-color:var(--border); color:var(--text-muted);}
+  .zoom-control input[type="range"]{
+    -webkit-appearance:none; appearance:none;
+    width:118px; height:6px; border-radius:999px; outline:none; cursor:pointer;
+    background:var(--border); accent-color:var(--primary); flex:none;
+  }
+  .zoom-control input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance:none; appearance:none;
+    width:16px; height:16px; border-radius:50%;
+    background:var(--primary); border:2px solid var(--surface);
+    box-shadow:0 1px 4px rgba(20,45,90,.25); cursor:pointer;
+  }
+  .zoom-control input[type="range"]::-moz-range-thumb{
+    width:16px; height:16px; border-radius:50%;
+    background:var(--primary); border:2px solid var(--surface);
+    box-shadow:0 1px 4px rgba(20,45,90,.25); cursor:pointer;
+  }
+  .zoom-value{
+    min-width:42px; text-align:right;
+    font-size:12.5px; font-weight:800; letter-spacing:.01em;
+    color:var(--primary); font-variant-numeric:tabular-nums;
+    cursor:pointer;
+  }
+  .zoom-value:hover{opacity:.8;}
+  @media (max-width: 900px){
+    .zoom-control{display:none !important;}
+    .content-inner{zoom:1;}
   }
 </style>
 </head>
@@ -4008,6 +4057,13 @@ npx expo start   # quét QR code bằng app Expo Go để xem trực tiếp trê
   </main>
 </div>
 
+<div class="zoom-control" id="zoomControl" role="group" aria-label="Zoom nội dung">
+  <button type="button" class="zoom-btn" id="zoomOut" aria-label="Thu nhỏ">−</button>
+  <input type="range" id="zoomSlider" min="80" max="160" step="5" value="100" aria-valuemin="80" aria-valuemax="160" aria-valuenow="100" aria-label="Tỷ lệ phóng to">
+  <button type="button" class="zoom-btn" id="zoomIn" aria-label="Phóng to">+</button>
+  <span class="zoom-value" id="zoomValue" title="Nhấp để đặt lại 100%">100%</span>
+</div>
+
 <script>
   // ---------- TOC data (single source of truth) ----------
   const tocJava = [
@@ -4317,6 +4373,39 @@ npx expo start   # quét QR code bằng app Expo Go để xem trực tiếp trê
     tbl.parentNode.insertBefore(wrap, tbl);
     wrap.appendChild(tbl);
   });
+
+  // ---------- Desktop content zoom ----------
+  const ZOOM_MIN = 80, ZOOM_MAX = 160, ZOOM_STEP = 5, ZOOM_DEFAULT = 100;
+  const zoomSlider = document.getElementById('zoomSlider');
+  const zoomValue = document.getElementById('zoomValue');
+  const zoomInBtn = document.getElementById('zoomIn');
+  const zoomOutBtn = document.getElementById('zoomOut');
+  const zoomDesktopMq = window.matchMedia('(min-width: 901px)');
+
+  function clampZoom(pct){
+    const n = Number(pct);
+    if (!Number.isFinite(n)) return ZOOM_DEFAULT;
+    return Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round(n / ZOOM_STEP) * ZOOM_STEP));
+  }
+  function applyContentZoom(pct, persist){
+    const z = clampZoom(pct);
+    zoomSlider.value = String(z);
+    zoomSlider.setAttribute('aria-valuenow', String(z));
+    zoomValue.textContent = z + '%';
+    zoomOutBtn.disabled = z <= ZOOM_MIN;
+    zoomInBtn.disabled = z >= ZOOM_MAX;
+    const useZoom = zoomDesktopMq.matches ? z / 100 : 1;
+    document.documentElement.style.setProperty('--content-zoom', String(useZoom));
+    const fill = ((z - ZOOM_MIN) / (ZOOM_MAX - ZOOM_MIN)) * 100;
+    zoomSlider.style.background = `linear-gradient(to right, var(--primary) ${fill}%, var(--border) ${fill}%)`;
+    if (persist !== false) localStorage.setItem('java-doc-zoom', String(z));
+  }
+  zoomSlider.addEventListener('input', () => applyContentZoom(zoomSlider.value));
+  zoomInBtn.addEventListener('click', () => applyContentZoom(Number(zoomSlider.value) + ZOOM_STEP));
+  zoomOutBtn.addEventListener('click', () => applyContentZoom(Number(zoomSlider.value) - ZOOM_STEP));
+  zoomValue.addEventListener('click', () => applyContentZoom(ZOOM_DEFAULT));
+  zoomDesktopMq.addEventListener('change', () => applyContentZoom(zoomSlider.value, false));
+  applyContentZoom(localStorage.getItem('java-doc-zoom') || ZOOM_DEFAULT, false);
 </script>
 </body>
 </html>
