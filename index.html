@@ -86,8 +86,9 @@
   .top-actions{display:flex; align-items:center; gap:10px; flex:none;}
 
   .track-switch{
-    display:flex; background:var(--tag-bg); border:1px solid var(--border); border-radius:999px; padding:3px; gap:2px;
-    margin:0 auto; flex:0 1 auto; max-width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none;
+    display:flex; flex-wrap:nowrap; background:var(--tag-bg); border:1px solid var(--border); border-radius:999px; padding:3px; gap:2px;
+    margin:0 auto; flex:0 1 auto; min-width:0; max-width:100%; overflow-x:auto; overflow-y:hidden;
+    -webkit-overflow-scrolling:touch; overscroll-behavior-x:contain; touch-action:pan-x; scrollbar-width:none;
   }
   .track-switch::-webkit-scrollbar{display:none;}
   .track-btn{
@@ -96,10 +97,13 @@
   }
   .track-btn.active{background:var(--surface); color:var(--primary); box-shadow:var(--shadow);}
 
-  body[data-track="java"] .track-react, body[data-track="java"] .track-aws, body[data-track="java"] .track-aif{display:none;}
-  body[data-track="react"] .track-java, body[data-track="react"] .track-aws, body[data-track="react"] .track-aif{display:none;}
-  body[data-track="aws"] .track-java, body[data-track="aws"] .track-react, body[data-track="aws"] .track-aif{display:none;}
-  body[data-track="aif"] .track-java, body[data-track="aif"] .track-react, body[data-track="aif"] .track-aws{display:none;}
+  body:not([data-track="java"]) .track-java,
+  body:not([data-track="react"]) .track-react,
+  body:not([data-track="aws"]) .track-aws,
+  body:not([data-track="aif"]) .track-aif,
+  body:not([data-track="oracle"]) .track-oracle,
+  body:not([data-track="pg"]) .track-pg{display:none;}
+  body:not([data-track="oracle"]):not([data-track="pg"]) .track-db-compare{display:none;}
 
   .callout.legacy{ background:#f1f1f4; border-left:3px solid #8b8ba0; }
   [data-theme="dark"] .callout.legacy{ background:#1c1e2b; }
@@ -297,7 +301,11 @@
       row-gap:8px; column-gap:10px;
     }
     .brand-text{display:none;}
-    .track-switch{order:3; flex:0 0 100%; width:100%; margin:0; justify-content:flex-start;}
+    .track-switch{
+      order:3; flex:1 1 100%; width:100%; min-width:0; max-width:100%; margin:0;
+      justify-content:flex-start; flex-wrap:nowrap;
+      overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch;
+    }
     .track-btn{padding:7px 12px; font-size:12.5px;}
     .top-actions{margin-left:auto;}
     :root{ --topbar-h: calc(108px + env(safe-area-inset-top, 0px)); }
@@ -422,6 +430,8 @@
     <button class="track-btn" data-track-option="react" role="tab">⚛️ React</button>
     <button class="track-btn" data-track-option="aws" role="tab">☁️ AWS SAA-C03</button>
     <button class="track-btn" data-track-option="aif" role="tab">🤖 AWS AIF-C01</button>
+    <button class="track-btn" data-track-option="oracle" role="tab">🔶 Oracle</button>
+    <button class="track-btn" data-track-option="pg" role="tab">🐘 PostgreSQL</button>
   </div>
   <div class="top-actions">
     <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
@@ -479,6 +489,16 @@
       <div class="page-header track-aif">
         <h1>AWS AI Practitioner (AIF-C01) — Ôn thi nền tảng AI/ML trên AWS</h1>
         <p>Tài liệu ôn tập theo cấu trúc khóa học AWS Certified AI Practitioner: khái niệm AI/ML/GenAI nền tảng, Amazon Bedrock, Prompt Engineering, các dịch vụ AI quản lý sẵn, SageMaker, và Responsible AI/Security. Đây là chứng chỉ nền tảng (foundational) — không yêu cầu viết code hay tự xây model. Tổng hợp dựa trên AWS Exam Guide (AIF-C01) chính thức.</p>
+      </div>
+
+      <div class="page-header track-oracle">
+        <h1>Oracle Database — SQL & PL/SQL từ nền tảng</h1>
+        <p>Tài liệu học Oracle theo lộ trình thực hành: cài đặt, kết nối, SQL (truy vấn → DDL/DML → quyền), PL/SQL nhập môn, lỗi thường gặp, và cách chạy Oracle trên AWS RDS. Diễn giải dựa trên Oracle SQL Language Reference, PL/SQL Language Reference và Oracle Database Free.</p>
+      </div>
+
+      <div class="page-header track-pg">
+        <h1>PostgreSQL — SQL & PL/pgSQL từ nền tảng</h1>
+        <p>Tài liệu học PostgreSQL theo lộ trình thực hành: cài đặt, psql, SQL (truy vấn → DDL/DML → role), JSON/extension, PL/pgSQL nhập môn, và cách chạy Postgres trên AWS RDS/Aurora. Diễn giải dựa trên PostgreSQL Official Documentation.</p>
       </div>
 
       <div class="track-java">
@@ -4053,6 +4073,1606 @@ npx expo start   # quét QR code bằng app Expo Go để xem trực tiếp trê
       </section>
 
       </div>
+
+      <div class="track-oracle">
+
+      <section class="doc-section" id="o1">
+        <div class="section-eyebrow">01</div>
+        <h2>Giới thiệu database &amp; Oracle</h2>
+
+        <h3 class="sub-h" id="o1-1">Database, DBMS, RDBMS</h3>
+        <p><strong>Database</strong> là nơi lưu dữ liệu có tổ chức. <strong>DBMS</strong> (Database Management System) là phần mềm quản lý database: nhận câu SQL, kiểm tra quyền, ghi/đọc đĩa, xử lý nhiều người dùng cùng lúc. <strong>RDBMS</strong> là DBMS quan hệ — dữ liệu nằm trong <em>bảng</em> (hàng × cột), bảng liên kết nhau bằng khóa. Oracle Database là một RDBMS.</p>
+        <div class="callout"><strong>Hình dung:</strong> file Excel là “bảng”; Oracle là hệ thống để nhiều người cùng sửa nhiều bảng, không làm hỏng dữ liệu, và tra cứu nhanh bằng SQL.</div>
+
+        <h3 class="sub-h" id="o1-2">SQL vs NoSQL — khi nào dùng Oracle</h3>
+        <p>SQL/quan hệ hợp khi dữ liệu có cấu trúc rõ (khách hàng, đơn hàng, số dư) và cần giao dịch chặt (chuyển tiền: trừ tài khoản A và cộng B phải cùng thành công hoặc cùng thất bại). NoSQL (document, key-value) hợp khi schema linh hoạt, scale ngang rất lớn. Oracle hướng doanh nghiệp: giao dịch, ràng buộc, báo cáo, bảo mật.</p>
+
+        <h3 class="sub-h" id="o1-3">Oracle Database là gì</h3>
+        <p>Oracle Database là RDBMS thương mại của Oracle Corporation. Ngoài SQL, nó có ngôn ngữ thủ tục <strong>PL/SQL</strong>, từ điển dữ liệu phong phú, và nhiều tính năng vận hành (backup, phân quyền, tối ưu câu lệnh). Người mới chỉ cần nắm SQL + transaction + user/schema; admin nâng cao để sau.</p>
+
+        <h3 class="sub-h" id="o1-4">Edition để học</h3>
+        <table>
+          <tr><th>Bản</th><th>Phù hợp</th><th>Ghi chú</th></tr>
+          <tr><td><strong>Oracle Database Free</strong> (thay XE)</td><td>Học trên máy</td><td>Miễn phí, giới hạn CPU/RAM/dung lượng — đủ bài tập</td></tr>
+          <tr><td>Oracle Live SQL</td><td>Học trên trình duyệt</td><td>Không cần cài; hạn chế quyền admin</td></tr>
+          <tr><td>Standard / Enterprise</td><td>Doanh nghiệp</td><td>Có license; không cần để học SQL</td></tr>
+        </table>
+        <div class="callout"><strong>Khuyến nghị:</strong> bắt đầu bằng <strong>Live SQL</strong> để quen câu lệnh, rồi cài <strong>Oracle Free</strong> khi cần user riêng, SQL Developer, và tập kết nối.</div>
+
+        <h3 class="sub-h" id="o1-5">Instance vs database vs schema</h3>
+        <p><strong>Instance</strong> là process + bộ nhớ đang chạy (để phục vụ câu lệnh). <strong>Database</strong> là file dữ liệu trên đĩa. <strong>Schema</strong> là tập object (bảng, view, sequence) thuộc về một user. Trên Oracle, tên user và tên schema thường trùng: user <code class="inline">HR</code> sở hữu schema <code class="inline">HR</code>.</p>
+      </section>
+
+      <section class="doc-section" id="o2">
+        <div class="section-eyebrow">02</div>
+        <h2>Cài đặt môi trường học</h2>
+
+        <h3 class="sub-h" id="o2-1">Chọn cách học</h3>
+        <ul>
+          <li><strong>Live SQL</strong> (livesql.oracle.com): vào là gõ SQL, không lo listener.</li>
+          <li><strong>Oracle Free trong Docker / VM / Windows installer:</strong> gần môi trường thật, luyện kết nối.</li>
+        </ul>
+
+        <h3 class="sub-h" id="o2-2">Cài Oracle Database Free / XE trên Windows</h3>
+        <ol>
+          <li>Tải bản Oracle Database Free từ trang Oracle; cài với mật khẩu cho user quản trị (SYS/SYSTEM).</li>
+          <li>Ghi nhớ <strong>service name</strong> (thường <code class="inline">FREEPDB1</code> với Free) — dùng để kết nối, không nhầm với SID của CDB.</li>
+          <li>Cổng listener mặc định <code class="inline">1521</code>. Kiểm tra Windows Service của Oracle đã Running.</li>
+        </ol>
+        <div class="callout"><strong>CDB/PDB:</strong> bản hiện đại dùng container: CDB là vỏ, PDB (pluggable database) mới là nơi bạn tạo user bài tập. Kết nối vào PDB, đừng vào CDB trừ khi làm admin.</div>
+
+        <h3 class="sub-h" id="o2-3">Cài SQL Developer và SQLcl</h3>
+        <p><strong>SQL Developer</strong> là GUI miễn phí: tạo connection, chạy script, xem bảng. <strong>SQLcl</strong> là dòng lệnh hiện đại hơn SQL*Plus (autocomplete). Cài JDK rồi giải nén SQL Developer; SQLcl chạy bằng <code class="inline">sql user/pass@host:1521/service</code>.</p>
+
+        <h3 class="sub-h" id="o2-4">Lỗi hay gặp khi cài</h3>
+        <ul>
+          <li>Port 1521 bị chiếm — đổi port hoặc tắt service cũ.</li>
+          <li>Quên mật khẩu SYS — dùng Oracle Password Utility / cài lại (môi trường học).</li>
+          <li><code class="inline">TNS-12541</code> / <code class="inline">12514</code>: listener chưa chạy hoặc sai service name.</li>
+        </ul>
+      </section>
+
+      <section class="doc-section" id="o3">
+        <div class="section-eyebrow">03</div>
+        <h2>Kết nối: SID, service name, listener</h2>
+
+        <h3 class="sub-h" id="o3-1">SID vs service name</h3>
+        <p><strong>SID</strong> là tên instance (cũ, vẫn gặp). <strong>Service name</strong> là tên dịch vụ client dùng để vào đúng PDB. Trên Oracle Free, hay gặp SID <code class="inline">FREE</code> và service <code class="inline">FREEPDB1</code>. Nên ưu tiên service name.</p>
+
+        <h3 class="sub-h" id="o3-2">Listener &amp; cổng 1521</h3>
+        <p>Listener là process nhận kết nối TCP rồi chuyển vào instance. Chưa chạy listener thì tool báo “could not contact listener”. Cổng mặc định 1521 — firewall Windows có thể chặn nếu kết nối từ máy khác.</p>
+
+        <h3 class="sub-h" id="o3-3">Easy Connect</h3>
+        <pre>sql hr/hr@localhost:1521/FREEPDB1
+-- host : port / service_name</pre>
+        <p>Đây là cách ngắn, không cần file cấu hình.</p>
+
+        <h3 class="sub-h" id="o3-4">tnsnames.ora</h3>
+        <p>File alias kết nối (kiểu “tên gọi” → host/port/service). SQL Developer có thể không cần file này nếu bạn điền host trực tiếp. Người mới chỉ cần <em>nhận ra</em> file tồn tại khi đọc tài liệu admin.</p>
+      </section>
+
+      <section class="doc-section" id="o4">
+        <div class="section-eyebrow">04</div>
+        <h2>Công cụ: SQL*Plus, SQLcl, SQL Developer</h2>
+
+        <h3 class="sub-h" id="o4-1">Kết nối lần đầu</h3>
+        <pre>sqlplus hr/hr@localhost:1521/FREEPDB1
+-- đổi mật khẩu (khi được yêu cầu):
+ALTER USER hr IDENTIFIED BY NewPass123;</pre>
+        <p>Đừng học bằng SYS cho bài SQL thường ngày — quyền quá lớn, dễ xóa nhầm.</p>
+
+        <h3 class="sub-h" id="o4-2">Lệnh môi trường</h3>
+        <ul>
+          <li><code class="inline">DESC employees</code> — mô tả cột bảng.</li>
+          <li><code class="inline">/</code> — chạy lại buffer câu lệnh vừa gõ.</li>
+          <li><code class="inline">SET DEFINE OFF</code> — tránh <code class="inline">&amp;</code> bị hiểu là biến substitution.</li>
+        </ul>
+
+        <h3 class="sub-h" id="o4-3">SQL Developer</h3>
+        <p>New Connection: User, Password, Hostname, Port, Service name (chọn Service name chứ không phải SID nếu đang vào PDB). Cửa sổ Worksheet để chạy SQL; F5 chạy cả script, Ctrl+Enter chạy câu đang chọn.</p>
+
+        <h3 class="sub-h" id="o4-4">Script .sql</h3>
+        <pre>@C:\scripts\setup_hr.sql
+-- SQL*Plus/SQLcl: chạy file
+SPOOL C:\tmp\out.txt
+SELECT * FROM employees;
+SPOOL OFF</pre>
+      </section>
+
+      <section class="doc-section" id="o5">
+        <div class="section-eyebrow">05</div>
+        <h2>User, schema, tablespace</h2>
+
+        <h3 class="sub-h" id="o5-1">User và schema</h3>
+        <p>Tạo user <code class="inline">learn</code> thì schema <code class="inline">learn</code> cũng xuất hiện. Bảng <code class="inline">EMPLOYEE</code> của user đó gọi đầy đủ là <code class="inline">LEARN.EMPLOYEE</code>. User khác muốn đọc phải được GRANT.</p>
+
+        <h3 class="sub-h" id="o5-2">Tablespace</h3>
+        <p>Tablespace là “ổ logic” chứa segment (bảng, index). User cần <strong>quota</strong> trên tablespace (thường <code class="inline">USERS</code>) mới tạo được bảng. Người mới chỉ cần biết: hết quota → không insert/create được.</p>
+
+        <h3 class="sub-h" id="o5-3">SYS và SYSTEM</h3>
+        <p><code class="inline">SYS</code> sở hữu data dictionary, mạnh nhất. <code class="inline">SYSTEM</code> cũng là admin. Không tạo bảng bài tập trong schema SYS.</p>
+
+        <h3 class="sub-h" id="o5-4">Tạo user học tập</h3>
+        <pre>-- chạy bằng user có quyền (SYSTEM), đã kết nối PDB
+CREATE USER learn IDENTIFIED BY Learn123;
+GRANT CREATE SESSION, CREATE TABLE, CREATE VIEW, CREATE SEQUENCE, CREATE PROCEDURE TO learn;
+ALTER USER learn QUOTA UNLIMITED ON USERS;</pre>
+      </section>
+
+      <section class="doc-section" id="o6">
+        <div class="section-eyebrow">06</div>
+        <h2>SQL — SELECT cơ bản</h2>
+
+        <h3 class="sub-h" id="o6-1">Cấu trúc SELECT</h3>
+        <pre>SELECT cột, biểu_thức
+FROM   bảng
+WHERE  điều_kiện
+ORDER BY cột;</pre>
+        <p>Thứ tự viết khác thứ tự chạy (FROM → WHERE → SELECT → ORDER BY). Hiểu điều này giúp lý giải vì sao alias cột không dùng được trong WHERE.</p>
+
+        <h3 class="sub-h" id="o6-2">Alias &amp; biểu thức</h3>
+        <pre>SELECT first_name AS ten, salary * 12 AS luong_nam
+FROM employees;</pre>
+
+        <h3 class="sub-h" id="o6-3">DUAL</h3>
+        <p>Oracle bắt buộc <code class="inline">SELECT</code> phải có <code class="inline">FROM</code>. Bảng giả <code class="inline">DUAL</code> có 1 hàng để tính biểu thức:</p>
+        <pre>SELECT 1 + 1 AS kq, SYSDATE FROM dual;</pre>
+
+        <h3 class="sub-h" id="o6-4">DISTINCT &amp; ROWNUM</h3>
+        <pre>SELECT DISTINCT department_id FROM employees;
+SELECT * FROM employees WHERE ROWNUM &lt;= 5;  -- 5 hàng "đầu" trước ORDER BY nếu không bọc subquery</pre>
+        <div class="callout"><strong>Hiện đại hơn:</strong> <code class="inline">FETCH FIRST 5 ROWS ONLY</code> (12c+) — rõ nghĩa hơn <code class="inline">ROWNUM</code>.</div>
+
+        <h3 class="sub-h" id="o6-5">ORDER BY</h3>
+        <pre>SELECT last_name, hire_date
+FROM employees
+ORDER BY hire_date DESC NULLS LAST;</pre>
+      </section>
+
+      <section class="doc-section" id="o7">
+        <div class="section-eyebrow">07</div>
+        <h2>Lọc dữ liệu — WHERE</h2>
+
+        <h3 class="sub-h" id="o7-1">Toán tử so sánh</h3>
+        <pre>SELECT * FROM employees
+WHERE salary &gt;= 8000
+  AND job_id = 'IT_PROG'
+  AND commission_pct IS NULL;</pre>
+
+        <h3 class="sub-h" id="o7-2">IN, BETWEEN, LIKE</h3>
+        <pre>WHERE department_id IN (10, 20, 30)
+WHERE salary BETWEEN 5000 AND 10000   -- inclusive
+WHERE last_name LIKE 'S%'             -- % nhiều ký tự, _ một ký tự
+WHERE last_name LIKE 'A\_%' ESCAPE '\'; -- tìm literal "_"</pre>
+
+        <h3 class="sub-h" id="o7-3">NULL</h3>
+        <p>Mọi so sánh với NULL cho ra UNKNOWN, hàng bị loại khỏi WHERE. Phải dùng <code class="inline">IS NULL</code> / <code class="inline">IS NOT NULL</code>, không viết <code class="inline">= NULL</code>.</p>
+
+        <h3 class="sub-h" id="o7-4">Thứ tự điều kiện</h3>
+        <p><code class="inline">NOT</code> &gt; <code class="inline">AND</code> &gt; <code class="inline">OR</code>. Khi nghi ngờ, dùng ngoặc:</p>
+        <pre>WHERE job_id = 'SA_REP' OR (job_id = 'ST_CLERK' AND salary &gt; 3000)</pre>
+      </section>
+
+      <section class="doc-section" id="o8">
+        <div class="section-eyebrow">08</div>
+        <h2>Kiểu dữ liệu Oracle</h2>
+
+        <h3 class="sub-h" id="o8-1">Ký tự</h3>
+        <p><code class="inline">VARCHAR2(n)</code> là chuẩn (độ dài thay đổi). <code class="inline">CHAR(n)</code> luôn pad khoảng trắng — ít dùng. <code class="inline">VARCHAR</code> được map sang <code class="inline">VARCHAR2</code> nhưng tài liệu Oracle khuyên luôn viết <code class="inline">VARCHAR2</code>. <code class="inline">NVARCHAR2</code> cho Unicode theo national charset.</p>
+
+        <h3 class="sub-h" id="o8-2">Số</h3>
+        <p><code class="inline">NUMBER(p,s)</code>: p tổng chữ số, s số thập phân. <code class="inline">NUMBER(5,2)</code> tối đa 999.99. Không có kiểu BOOLEAN trong SQL thuần (PL/SQL mới có).</p>
+
+        <h3 class="sub-h" id="o8-3">Ngày giờ</h3>
+        <p><code class="inline">DATE</code> chứa cả ngày lẫn giờ (đến giây). <code class="inline">TIMESTAMP</code> chính xác hơn (phân giây). <code class="inline">TIMESTAMP WITH TIME ZONE</code> khi cần múi giờ.</p>
+
+        <h3 class="sub-h" id="o8-4">CLOB / BLOB</h3>
+        <p>CLOB = văn bản lớn; BLOB = nhị phân (ảnh, file). Người mới biết để không nhét file vào <code class="inline">VARCHAR2</code>.</p>
+
+        <h3 class="sub-h" id="o8-5">Chuyển kiểu</h3>
+        <pre>SELECT TO_CHAR(hire_date, 'YYYY-MM-DD') FROM employees;
+SELECT TO_DATE('2024-03-15', 'YYYY-MM-DD') FROM dual;
+SELECT TO_NUMBER('1,250.50', '9,999.99') FROM dual;
+SELECT CAST(salary AS NUMBER(10,2)) FROM employees;</pre>
+        <div class="callout"><strong>ORA-01861:</strong> literal ngày không khớp format mask — sửa mask, đừng đoán.</div>
+      </section>
+
+      <section class="doc-section" id="o9">
+        <div class="section-eyebrow">09</div>
+        <h2>Hàm chuỗi &amp; số</h2>
+
+        <h3 class="sub-h" id="o9-1">Hàm chuỗi</h3>
+        <pre>SELECT UPPER(last_name), SUBSTR(first_name, 1, 1),
+       INSTR(email, '@'), TRIM('  AB  '),
+       REPLACE(job_id, 'IT', 'DEV'),
+       first_name || ' ' || last_name AS full_name
+FROM employees;</pre>
+        <p>Trong Oracle, <code class="inline">''</code> (chuỗi rỗng) được coi là <strong>NULL</strong> — khác PostgreSQL.</p>
+
+        <h3 class="sub-h" id="o9-2">Hàm số</h3>
+        <pre>SELECT ROUND(15.76, 1), TRUNC(15.76, 1), MOD(10, 3), CEIL(2.1), FLOOR(2.9)
+FROM dual;</pre>
+
+        <h3 class="sub-h" id="o9-3">LPAD / RPAD</h3>
+        <pre>SELECT LPAD(employee_id, 5, '0') FROM employees;  -- 00012</pre>
+      </section>
+
+      <section class="doc-section" id="o10">
+        <div class="section-eyebrow">10</div>
+        <h2>Hàm ngày giờ</h2>
+
+        <h3 class="sub-h" id="o10-1">SYSDATE &amp; SYSTIMESTAMP</h3>
+        <p><code class="inline">SYSDATE</code> là đồng hồ database server (kiểu DATE). <code class="inline">SYSTIMESTAMP</code> có phân giây + timezone server. <code class="inline">CURRENT_DATE</code> theo session timezone.</p>
+
+        <h3 class="sub-h" id="o10-2">Tính toán ngày</h3>
+        <pre>SELECT SYSDATE + 7,                    -- cộng 7 ngày
+       ADD_MONTHS(SYSDATE, 3),
+       MONTHS_BETWEEN(SYSDATE, hire_date),
+       LAST_DAY(SYSDATE),
+       NEXT_DAY(SYSDATE, 'MONDAY')
+FROM employees;</pre>
+
+        <h3 class="sub-h" id="o10-3">EXTRACT, TRUNC</h3>
+        <pre>SELECT EXTRACT(YEAR FROM hire_date),
+       TRUNC(SYSDATE, 'MM')   -- về ngày 1 của tháng
+FROM employees;</pre>
+
+        <h3 class="sub-h" id="o10-4">Format mask</h3>
+        <pre>TO_CHAR(SYSDATE, 'YYYY-MM-DD HH24:MI:SS')
+TO_DATE('14/09/2026', 'DD/MM/YYYY')</pre>
+        <p>Mask hay dùng: <code class="inline">YYYY</code>, <code class="inline">MM</code>, <code class="inline">DD</code>, <code class="inline">HH24</code>, <code class="inline">MI</code>, <code class="inline">SS</code>, <code class="inline">MON</code>.</p>
+      </section>
+
+      <section class="doc-section" id="o11">
+        <div class="section-eyebrow">11</div>
+        <h2>NULL và biểu thức điều kiện</h2>
+
+        <h3 class="sub-h" id="o11-1">NULL lan truyền</h3>
+        <p><code class="inline">1 + NULL</code> → NULL; <code class="inline">'A' || NULL</code> trên Oracle cho <code class="inline">'A'</code> (nối chuỗi là ngoại lệ lịch sử). Aggregate: <code class="inline">SUM</code> bỏ NULL; <code class="inline">COUNT(cột)</code> không đếm NULL, <code class="inline">COUNT(*)</code> đếm hàng.</p>
+
+        <h3 class="sub-h" id="o11-2">NVL, NVL2, COALESCE</h3>
+        <pre>NVL(commission_pct, 0)           -- 1 đối số thay thế
+NVL2(commission_pct, 'Y', 'N')  -- khác NULL → Y
+COALESCE(phone, mobile, 'N/A')  -- SQL chuẩn, nhiều đối số</pre>
+        <p>Nên quen <code class="inline">COALESCE</code> vì mang sang PostgreSQL được.</p>
+
+        <h3 class="sub-h" id="o11-3">DECODE vs CASE</h3>
+        <pre>SELECT DECODE(status, 'A', 'Active', 'I', 'Inactive', 'Other') FROM t;
+SELECT CASE status
+         WHEN 'A' THEN 'Active'
+         WHEN 'I' THEN 'Inactive'
+         ELSE 'Other'
+       END
+FROM t;</pre>
+        <p><code class="inline">CASE</code> là SQL chuẩn, đọc được điều kiện phức tạp. <code class="inline">DECODE</code> chỉ có trên Oracle.</p>
+      </section>
+
+      <section class="doc-section" id="o12">
+        <div class="section-eyebrow">12</div>
+        <h2>JOIN</h2>
+
+        <h3 class="sub-h" id="o12-1">Khóa và quan hệ</h3>
+        <p>Khóa chính (PK) định danh hàng. Khóa ngoại (FK) trỏ sang PK bảng khác — quan hệ 1-n điển hình: một phòng ban, nhiều nhân viên.</p>
+
+        <h3 class="sub-h" id="o12-2">INNER / OUTER JOIN</h3>
+        <pre>SELECT e.last_name, d.department_name
+FROM employees e
+JOIN departments d ON d.department_id = e.department_id;   -- INNER
+
+SELECT e.last_name, d.department_name
+FROM employees e
+LEFT JOIN departments d ON d.department_id = e.department_id;</pre>
+        <p>INNER: chỉ hàng khớp hai bên. LEFT: giữ hết hàng bảng trái, cột phải NULL nếu không khớp.</p>
+
+        <h3 class="sub-h" id="o12-3">Self join</h3>
+        <pre>SELECT e.last_name AS emp, m.last_name AS manager
+FROM employees e
+LEFT JOIN employees m ON m.employee_id = e.manager_id;</pre>
+
+        <h3 class="sub-h" id="o12-4">Cú pháp (+)</h3>
+        <pre>-- cũ, không viết mới:
+FROM employees e, departments d
+WHERE d.department_id (+) = e.department_id</pre>
+        <p>Chỉ để đọc code legacy. Viết <code class="inline">LEFT JOIN</code>.</p>
+
+        <h3 class="sub-h" id="o12-5">Cartesian product</h3>
+        <p>Quên điều kiện join → mỗi hàng bảng A nhân mọi hàng bảng B. Nếu kết quả “bỗng nhiên hàng triệu dòng”, kiểm tra JOIN trước.</p>
+      </section>
+
+      <section class="doc-section" id="o13">
+        <div class="section-eyebrow">13</div>
+        <h2>Tập hợp &amp; subquery</h2>
+
+        <h3 class="sub-h" id="o13-1">UNION / INTERSECT / MINUS</h3>
+        <pre>SELECT job_id FROM employees
+UNION          -- loại trùng
+SELECT job_id FROM job_history;
+-- UNION ALL giữ trùng
+-- INTERSECT phần giao
+-- MINUS: có ở A, không ở B  (PostgreSQL gọi EXCEPT)</pre>
+        <p>Số cột và kiểu tương thích phải khớp.</p>
+
+        <h3 class="sub-h" id="o13-2">Subquery WHERE</h3>
+        <pre>SELECT last_name FROM employees
+WHERE department_id IN (SELECT department_id FROM departments WHERE location_id = 1700);
+
+SELECT last_name FROM employees e
+WHERE EXISTS (
+  SELECT 1 FROM departments d
+  WHERE d.department_id = e.department_id AND d.location_id = 1700
+);</pre>
+
+        <h3 class="sub-h" id="o13-3">Scalar subquery</h3>
+        <pre>SELECT last_name,
+       (SELECT department_name FROM departments d
+        WHERE d.department_id = e.department_id) AS dept
+FROM employees e;</pre>
+        <p>Subquery scalar phải trả về tối đa 1 hàng/1 cột — không thì <code class="inline">ORA-01427</code>.</p>
+
+        <h3 class="sub-h" id="o13-4">Inline view</h3>
+        <pre>SELECT * FROM (
+  SELECT last_name, salary FROM employees ORDER BY salary DESC
+) WHERE ROWNUM &lt;= 5;</pre>
+      </section>
+
+      <section class="doc-section" id="o14">
+        <div class="section-eyebrow">14</div>
+        <h2>Gom nhóm</h2>
+
+        <h3 class="sub-h" id="o14-1">Hàm tổng hợp</h3>
+        <pre>SELECT COUNT(*), AVG(salary), MAX(salary), MIN(hire_date), SUM(salary)
+FROM employees;</pre>
+
+        <h3 class="sub-h" id="o14-2">GROUP BY</h3>
+        <pre>SELECT department_id, COUNT(*), ROUND(AVG(salary), 2)
+FROM employees
+GROUP BY department_id;</pre>
+        <p>Mọi cột trong SELECT không nằm trong hàm tổng hợp phải có trong GROUP BY.</p>
+
+        <h3 class="sub-h" id="o14-3">HAVING vs WHERE</h3>
+        <p>WHERE lọc hàng trước khi nhóm. HAVING lọc <em>sau</em> khi nhóm (theo COUNT, AVG…).</p>
+        <pre>SELECT department_id, COUNT(*)
+FROM employees
+WHERE salary &gt;= 3000
+GROUP BY department_id
+HAVING COUNT(*) &gt;= 5;</pre>
+
+        <h3 class="sub-h" id="o14-4">COUNT và NULL</h3>
+        <p><code class="inline">COUNT(*)</code> = số hàng. <code class="inline">COUNT(commission_pct)</code> = số hàng có hoa hồng khác NULL.</p>
+      </section>
+
+      <section class="doc-section" id="o15">
+        <div class="section-eyebrow">15</div>
+        <h2>DDL — tạo và sửa cấu trúc</h2>
+        <p>DDL (Data Definition Language) định nghĩa object: <code class="inline">CREATE</code>, <code class="inline">ALTER</code>, <code class="inline">DROP</code>, <code class="inline">TRUNCATE</code>, <code class="inline">COMMENT</code>. Trên Oracle, DDL thường <strong>commit ngầm</strong> transaction đang mở — khác PostgreSQL.</p>
+
+        <h3 class="sub-h" id="o15-1">CREATE TABLE</h3>
+        <pre>CREATE TABLE department (
+  department_id   NUMBER(4)    CONSTRAINT pk_dept PRIMARY KEY,
+  department_name VARCHAR2(50) NOT NULL
+);</pre>
+
+        <h3 class="sub-h" id="o15-2">ALTER TABLE</h3>
+        <pre>ALTER TABLE department ADD (location VARCHAR2(40));
+ALTER TABLE department MODIFY (location VARCHAR2(80));
+ALTER TABLE department DROP COLUMN location;</pre>
+
+        <h3 class="sub-h" id="o15-3">DROP &amp; TRUNCATE</h3>
+        <p><code class="inline">DELETE</code> xóa hàng, rollback được. <code class="inline">TRUNCATE</code> xóa hết hàng, DDL, nhanh, không rollback. <code class="inline">DROP TABLE</code> xóa luôn định nghĩa bảng.</p>
+
+        <h3 class="sub-h" id="o15-4">COMMENT ON</h3>
+        <pre>COMMENT ON TABLE department IS 'Phòng ban';
+COMMENT ON COLUMN department.department_name IS 'Tên phòng';</pre>
+      </section>
+
+      <section class="doc-section" id="o16">
+        <div class="section-eyebrow">16</div>
+        <h2>Ràng buộc (constraint)</h2>
+
+        <h3 class="sub-h" id="o16-1">Các loại constraint</h3>
+        <ul>
+          <li><code class="inline">NOT NULL</code> — bắt buộc có giá trị</li>
+          <li><code class="inline">UNIQUE</code> — không trùng (NULL vẫn có thể xuất hiện, tùy phiên bản/cột)</li>
+          <li><code class="inline">PRIMARY KEY</code> = UNIQUE + NOT NULL</li>
+          <li><code class="inline">FOREIGN KEY</code> — phải tồn tại bên bảng cha</li>
+          <li><code class="inline">CHECK</code> — điều kiện tự viết (<code class="inline">salary &gt; 0</code>)</li>
+        </ul>
+
+        <h3 class="sub-h" id="o16-2">Đặt tên &amp; lỗi ORA</h3>
+        <p>Nên đặt tên <code class="inline">pk_</code>, <code class="inline">fk_</code>, <code class="inline">uk_</code>, <code class="inline">ck_</code>. Vi phạm PK/UNIQUE → <code class="inline">ORA-00001</code>. FK không tồn tại cha → <code class="inline">ORA-02291</code>. Xóa cha còn con → <code class="inline">ORA-02292</code>.</p>
+
+        <h3 class="sub-h" id="o16-3">ON DELETE</h3>
+        <pre>CONSTRAINT fk_emp_dept FOREIGN KEY (department_id)
+  REFERENCES department(department_id)
+  ON DELETE SET NULL      -- hoặc CASCADE</pre>
+
+        <h3 class="sub-h" id="o16-4">Enable / disable</h3>
+        <pre>ALTER TABLE employee DISABLE CONSTRAINT fk_emp_dept;
+ALTER TABLE employee ENABLE CONSTRAINT fk_emp_dept;</pre>
+        <p>Dùng khi nạp data hàng loạt; nhớ bật lại và kiểm tra dữ liệu mồ côi.</p>
+      </section>
+
+      </div>
+
+      <div class="track-oracle">
+
+      <section class="doc-section" id="o17">
+        <div class="section-eyebrow">17</div>
+        <h2>DML &amp; transaction</h2>
+        <p>DML (Data Manipulation Language): <code class="inline">INSERT</code>, <code class="inline">UPDATE</code>, <code class="inline">DELETE</code>, <code class="inline">MERGE</code>. TCL (Transaction Control): <code class="inline">COMMIT</code>, <code class="inline">ROLLBACK</code>, <code class="inline">SAVEPOINT</code>.</p>
+
+        <h3 class="sub-h" id="o17-1">INSERT</h3>
+        <pre>INSERT INTO department (department_id, department_name) VALUES (90, 'IT');
+INSERT INTO department (department_id, department_name)
+SELECT 100, 'Temp' FROM dual;</pre>
+
+        <h3 class="sub-h" id="o17-2">UPDATE &amp; DELETE</h3>
+        <pre>UPDATE employee SET salary = salary * 1.05 WHERE department_id = 90;
+DELETE FROM employee WHERE employee_id = 999;</pre>
+        <div class="callout"><strong>Bắt buộc:</strong> luôn có <code class="inline">WHERE</code> có chủ đích. Thiếu WHERE = sửa/xóa cả bảng. Thử <code class="inline">SELECT</code> cùng điều kiện trước khi UPDATE/DELETE.</div>
+
+        <h3 class="sub-h" id="o17-3">COMMIT / ROLLBACK / SAVEPOINT</h3>
+        <pre>UPDATE employee SET salary = 1 WHERE employee_id = 100;
+SAVEPOINT before_more;
+UPDATE employee SET salary = 2 WHERE employee_id = 101;
+ROLLBACK TO before_more;  -- chỉ hủy lệnh sau savepoint
+COMMIT;                   -- ghi vĩnh viễn</pre>
+        <p>SQL Developer mặc định có thể auto-commit — tắt khi học transaction.</p>
+
+        <h3 class="sub-h" id="o17-4">Read consistency</h3>
+        <p>Session khác <em>không</em> thấy thay đổi của bạn cho đến khi COMMIT (mức cô lập mặc định). Đó là lý do “tôi insert rồi mà bạn kia chưa thấy”.</p>
+
+        <h3 class="sub-h" id="o17-5">MERGE</h3>
+        <pre>MERGE INTO employee t
+USING (SELECT 100 AS employee_id, 9000 AS salary FROM dual) s
+ON (t.employee_id = s.employee_id)
+WHEN MATCHED THEN UPDATE SET t.salary = s.salary
+WHEN NOT MATCHED THEN INSERT (employee_id, last_name, salary)
+  VALUES (s.employee_id, 'New', s.salary);</pre>
+        <p>Đây là upsert của Oracle. PostgreSQL dùng <code class="inline">INSERT … ON CONFLICT</code>.</p>
+      </section>
+
+      <section class="doc-section" id="o18">
+        <div class="section-eyebrow">18</div>
+        <h2>Sequence &amp; identity</h2>
+
+        <h3 class="sub-h" id="o18-1">CREATE SEQUENCE</h3>
+        <pre>CREATE SEQUENCE emp_seq START WITH 1 INCREMENT BY 1 NOCACHE;</pre>
+        <p><code class="inline">emp_seq.NEXTVAL</code> lấy số mới; <code class="inline">CURRVAL</code> là số vừa lấy trong session (phải NEXTVAL trước).</p>
+
+        <h3 class="sub-h" id="o18-2">Dùng trong INSERT</h3>
+        <pre>INSERT INTO employee (employee_id, last_name)
+VALUES (emp_seq.NEXTVAL, 'Nguyen');</pre>
+
+        <h3 class="sub-h" id="o18-3">GENERATED AS IDENTITY</h3>
+        <pre>CREATE TABLE t (
+  id NUMBER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  name VARCHAR2(50)
+);</pre>
+        <p>12c+: khỏi tự gọi sequence. <code class="inline">BY DEFAULT</code> vẫn cho phép insert id thủ công; <code class="inline">ALWAYS</code> thì không.</p>
+
+        <h3 class="sub-h" id="o18-4">CACHE &amp; số nhảy</h3>
+        <p>Sequence cache sẵn một dải số trên instance. Restart instance có thể “nhảy cóc” id — bình thường, không phải lỗi. Đừng giả định id luôn liên tục.</p>
+      </section>
+
+      <section class="doc-section" id="o19">
+        <div class="section-eyebrow">19</div>
+        <h2>View</h2>
+
+        <h3 class="sub-h" id="o19-1">View đơn giản</h3>
+        <pre>CREATE OR REPLACE VIEW v_emp_it AS
+SELECT employee_id, last_name, salary
+FROM employee
+WHERE department_id = 90;</pre>
+
+        <h3 class="sub-h" id="o19-2">View để làm gì</h3>
+        <p>Giấu cột nhạy cảm, đơn giản hóa join phức tạp, cấp GRANT trên view thay vì bảng gốc.</p>
+
+        <h3 class="sub-h" id="o19-3">View và UPDATE</h3>
+        <p>View 1 bảng, không DISTINCT/GROUP BY thường update được. View join nhiều bảng thường chỉ đọc. Đừng mặc định UPDATE qua view.</p>
+      </section>
+
+      <section class="doc-section" id="o20">
+        <div class="section-eyebrow">20</div>
+        <h2>Index</h2>
+
+        <h3 class="sub-h" id="o20-1">Index B-tree</h3>
+        <p>Index giống mục lục sách: tìm theo cột có index thì khỏi quét cả bảng. Tạo khi cột hay xuất hiện trong WHERE/JOIN và bảng đủ lớn. Bảng nhỏ hoặc cột ít phân biệt (giới tính) thì index có thể vô ích.</p>
+        <pre>CREATE INDEX ix_emp_dept ON employee(department_id);</pre>
+
+        <h3 class="sub-h" id="o20-2">Index trên PK/UNIQUE</h3>
+        <p>Oracle tự tạo index cho PRIMARY KEY và UNIQUE. Không tạo trùng tay.</p>
+
+        <h3 class="sub-h" id="o20-3">Composite index</h3>
+        <p>Index nhiều cột: <code class="inline">(last_name, first_name)</code>. Hữu ích khi WHERE lọc đúng thứ tự cột dẫn (leading columns).</p>
+
+        <h3 class="sub-h" id="o20-4">EXPLAIN PLAN</h3>
+        <pre>EXPLAIN PLAN FOR SELECT * FROM employee WHERE department_id = 90;
+SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY);</pre>
+        <p>Người mới chỉ cần nhận ra <em>TABLE ACCESS FULL</em> (quét hết) vs <em>INDEX RANGE SCAN</em>.</p>
+      </section>
+
+      <section class="doc-section" id="o21">
+        <div class="section-eyebrow">21</div>
+        <h2>Synonym &amp; database link</h2>
+
+        <h3 class="sub-h" id="o21-1">Private / public synonym</h3>
+        <pre>CREATE SYNONYM emp FOR learn.employee;
+CREATE PUBLIC SYNONYM emp FOR learn.employee;  -- cần quyền mạnh</pre>
+        <p>Private: chỉ user tạo thấy. Public: mọi user thấy tên đó (vẫn cần quyền trên object gốc).</p>
+
+        <h3 class="sub-h" id="o21-2">Khi nào dùng synonym</h3>
+        <p>Che schema/tên thật, hoặc giữ tên ổn định khi đổi object phía dưới. Ứng dụng gọi <code class="inline">emp</code> thay vì <code class="inline">LEARN.EMPLOYEE</code>.</p>
+
+        <h3 class="sub-h" id="o21-3">Database link</h3>
+        <pre>SELECT * FROM employee@other_db;</pre>
+        <p>Chỉ cần biết: truy vấn bảng ở database khác qua link. Không cấu hình chi tiết ở mức này.</p>
+      </section>
+
+      <section class="doc-section" id="o22">
+        <div class="section-eyebrow">22</div>
+        <h2>User, role, quyền — DCL</h2>
+        <p>DCL (Data Control Language): <code class="inline">GRANT</code>, <code class="inline">REVOKE</code>.</p>
+
+        <h3 class="sub-h" id="o22-1">System vs object privilege</h3>
+        <p><strong>System privilege:</strong> làm một loại việc (<code class="inline">CREATE TABLE</code>, <code class="inline">CREATE SESSION</code>). <strong>Object privilege:</strong> trên object cụ thể (<code class="inline">SELECT ON hr.employee</code>).</p>
+
+        <h3 class="sub-h" id="o22-2">GRANT / REVOKE</h3>
+        <pre>GRANT SELECT, INSERT ON employee TO app_user;
+GRANT UPDATE (salary) ON employee TO payroll;  -- chỉ 1 cột
+REVOKE INSERT ON employee FROM app_user;</pre>
+
+        <h3 class="sub-h" id="o22-3">Role</h3>
+        <p>Role là nhóm quyền. Gán quyền vào role, rồi gán role cho user — dễ quản lý hơn GRANT từng user. Role cũ <code class="inline">CONNECT</code>/<code class="inline">RESOURCE</code> từng phổ biến; môi trường mới nên tự tạo role rõ việc (<code class="inline">APP_READ</code>, <code class="inline">APP_WRITE</code>).</p>
+
+        <h3 class="sub-h" id="o22-4">WITH GRANT OPTION</h3>
+        <p>Cho user A quyền và cho A quyền <em>ban tiếp</em> cho người khác. Dễ loạn nguồn gốc quyền — tránh trừ khi hiểu rõ. <code class="inline">WITH ADMIN OPTION</code> tương tự với system privilege / role.</p>
+
+        <h3 class="sub-h" id="o22-5">Xem quyền</h3>
+        <pre>SELECT * FROM user_tab_privs;
+SELECT * FROM session_roles;
+SELECT * FROM user_sys_privs;</pre>
+      </section>
+
+      <section class="doc-section" id="o23">
+        <div class="section-eyebrow">23</div>
+        <h2>Từ điển dữ liệu</h2>
+
+        <h3 class="sub-h" id="o23-1">USER_ / ALL_ / DBA_</h3>
+        <p><code class="inline">USER_*</code>: object bạn sở hữu. <code class="inline">ALL_*</code>: object bạn thấy được. <code class="inline">DBA_*</code>: tất cả (cần quyền DBA).</p>
+
+        <h3 class="sub-h" id="o23-2">View hay dùng</h3>
+        <pre>SELECT table_name FROM user_tables;
+SELECT column_name, data_type FROM user_tab_columns WHERE table_name = 'EMPLOYEE';
+SELECT constraint_name, constraint_type FROM user_constraints;
+SELECT index_name FROM user_indexes;</pre>
+      </section>
+
+      <section class="doc-section" id="o24">
+        <div class="section-eyebrow">24</div>
+        <h2>PL/SQL — block &amp; biến</h2>
+
+        <h3 class="sub-h" id="o24-1">Anonymous block</h3>
+        <pre>SET SERVEROUTPUT ON
+DECLARE
+  v_name VARCHAR2(50);
+BEGIN
+  SELECT last_name INTO v_name FROM employee WHERE employee_id = 100;
+  DBMS_OUTPUT.PUT_LINE('Name=' || v_name);
+EXCEPTION
+  WHEN NO_DATA_FOUND THEN
+    DBMS_OUTPUT.PUT_LINE('Không có hàng');
+END;
+/</pre>
+
+        <h3 class="sub-h" id="o24-2">%TYPE, %ROWTYPE</h3>
+        <pre>v_sal employee.salary%TYPE;     -- theo đúng kiểu cột
+v_row employee%ROWTYPE;         -- cả hàng</pre>
+        <p>Khi đổi kiểu cột, biến bám theo — đỡ sửa tay.</p>
+
+        <h3 class="sub-h" id="o24-3">DBMS_OUTPUT</h3>
+        <p>In ra console khi học. SQL Developer: bật DBMS Output. Không dùng làm cách trả kết quả cho ứng dụng (hãy dùng function / cursor / API).</p>
+      </section>
+
+      <section class="doc-section" id="o25">
+        <div class="section-eyebrow">25</div>
+        <h2>PL/SQL — điều kiện &amp; vòng lặp</h2>
+
+        <h3 class="sub-h" id="o25-1">IF / CASE</h3>
+        <pre>IF v_sal &gt;= 10000 THEN
+  v_level := 'HIGH';
+ELSIF v_sal &gt;= 5000 THEN
+  v_level := 'MID';
+ELSE
+  v_level := 'LOW';
+END IF;</pre>
+
+        <h3 class="sub-h" id="o25-2">LOOP / WHILE / FOR</h3>
+        <pre>FOR i IN 1..3 LOOP
+  DBMS_OUTPUT.PUT_LINE(i);
+END LOOP;
+
+FOR r IN (SELECT last_name FROM employee WHERE department_id = 90) LOOP
+  DBMS_OUTPUT.PUT_LINE(r.last_name);
+END LOOP;</pre>
+      </section>
+
+      <section class="doc-section" id="o26">
+        <div class="section-eyebrow">26</div>
+        <h2>PL/SQL — exception</h2>
+
+        <h3 class="sub-h" id="o26-1">Exception có sẵn</h3>
+        <p><code class="inline">NO_DATA_FOUND</code> — SELECT INTO 0 hàng. <code class="inline">TOO_MANY_ROWS</code> — SELECT INTO &gt;1 hàng. <code class="inline">DUP_VAL_ON_INDEX</code> — trùng unique/PK.</p>
+
+        <h3 class="sub-h" id="o26-2">WHEN OTHERS</h3>
+        <p>Bắt mọi lỗi còn lại. Đừng nuốt lỗi im lặng. Nếu dùng, hãy log rồi <code class="inline">RAISE</code> lại, trừ khi bạn cố ý xử lý.</p>
+
+        <h3 class="sub-h" id="o26-3">Exception tự định nghĩa</h3>
+        <pre>DECLARE
+  e_too_low EXCEPTION;
+BEGIN
+  IF v_sal &lt; 100 THEN RAISE e_too_low; END IF;
+EXCEPTION
+  WHEN e_too_low THEN DBMS_OUTPUT.PUT_LINE('Lương quá thấp');
+END;</pre>
+      </section>
+
+      <section class="doc-section" id="o27">
+        <div class="section-eyebrow">27</div>
+        <h2>Cursor, procedure, function</h2>
+
+        <h3 class="sub-h" id="o27-1">Cursor</h3>
+        <p>Cursor tường minh ít cần khi đã có <code class="inline">FOR r IN (SELECT …)</code> (cursor ngầm). Dùng khi cần OPEN/FETCH/CLOSE từng bước.</p>
+
+        <h3 class="sub-h" id="o27-2">Procedure</h3>
+        <pre>CREATE OR REPLACE PROCEDURE raise_sal(p_id NUMBER, p_pct NUMBER) AS
+BEGIN
+  UPDATE employee SET salary = salary * (1 + p_pct/100)
+  WHERE employee_id = p_id;
+END;
+/
+EXEC raise_sal(100, 5);</pre>
+        <p>Tham số <code class="inline">IN</code> (mặc định), <code class="inline">OUT</code>, <code class="inline">IN OUT</code>.</p>
+
+        <h3 class="sub-h" id="o27-3">Function</h3>
+        <pre>CREATE OR REPLACE FUNCTION tax(p_sal NUMBER) RETURN NUMBER AS
+BEGIN
+  RETURN p_sal * 0.1;
+END;
+/
+SELECT last_name, tax(salary) FROM employee;</pre>
+        <p>Function dùng trong SQL nên tránh side-effect (đừng UPDATE bên trong nếu gọi từ SELECT).</p>
+
+        <h3 class="sub-h" id="o27-4">Package</h3>
+        <p>Package = spec (khai báo) + body (code) để nhóm procedure/function. Biết khái niệm là đủ ở giai đoạn này.</p>
+      </section>
+
+      <section class="doc-section" id="o28">
+        <div class="section-eyebrow">28</div>
+        <h2>Thực hành mini</h2>
+
+        <h3 class="sub-h" id="o28-1">Thiết kế schema HR rút gọn</h3>
+        <p>Ba bảng: <code class="inline">DEPARTMENT(department_id, department_name)</code>, <code class="inline">JOB(job_id, job_title)</code>, <code class="inline">EMPLOYEE(employee_id, last_name, salary, department_id, job_id, manager_id)</code>. FK: employee → department, employee → job, employee.manager_id → employee.</p>
+
+        <h3 class="sub-h" id="o28-2">Tạo bảng &amp; seed</h3>
+        <pre>CREATE TABLE department (
+  department_id   NUMBER(4) PRIMARY KEY,
+  department_name VARCHAR2(50) NOT NULL
+);
+CREATE TABLE job (
+  job_id    VARCHAR2(10) PRIMARY KEY,
+  job_title VARCHAR2(50) NOT NULL
+);
+CREATE TABLE employee (
+  employee_id   NUMBER(6) PRIMARY KEY,
+  last_name     VARCHAR2(40) NOT NULL,
+  salary        NUMBER(8,2) CHECK (salary &gt; 0),
+  department_id NUMBER(4) REFERENCES department,
+  job_id        VARCHAR2(10) REFERENCES job,
+  manager_id    NUMBER(6) REFERENCES employee
+);
+INSERT INTO department VALUES (10, 'Sales');
+INSERT INTO department VALUES (20, 'IT');
+INSERT INTO job VALUES ('SA', 'Sales Rep');
+INSERT INTO job VALUES ('IT', 'Developer');
+INSERT INTO employee VALUES (1, 'Lan', 1200, 10, 'SA', NULL);
+INSERT INTO employee VALUES (2, 'Minh', 1800, 20, 'IT', 1);
+COMMIT;</pre>
+
+        <h3 class="sub-h" id="o28-3">Query và procedure</h3>
+        <pre>SELECT d.department_name, COUNT(*), ROUND(AVG(e.salary), 2)
+FROM employee e JOIN department d ON d.department_id = e.department_id
+GROUP BY d.department_name;
+
+CREATE OR REPLACE PROCEDURE bump_it AS
+BEGIN
+  UPDATE employee SET salary = salary * 1.1 WHERE job_id = 'IT';
+END;</pre>
+      </section>
+
+      <section class="doc-section" id="o29">
+        <div class="section-eyebrow">29</div>
+        <h2>Lỗi Oracle hay gặp</h2>
+
+        <h3 class="sub-h" id="o29-1">Lỗi SQL thường gặp</h3>
+        <table>
+          <tr><th>Mã</th><th>Ý nghĩa</th><th>Hướng xử lý</th></tr>
+          <tr><td>ORA-00942</td><td>Bảng/view không tồn tại (hoặc không có quyền)</td><td>Sai tên, sai schema, chưa GRANT</td></tr>
+          <tr><td>ORA-00904</td><td>Cột không tồn tại</td><td>Sai tên cột / alias</td></tr>
+          <tr><td>ORA-01722</td><td>Invalid number</td><td>So sánh/ép kiểu số trên chuỗi bẩn</td></tr>
+          <tr><td>ORA-01861</td><td>Literal không khớp format</td><td>Sửa TO_DATE mask</td></tr>
+          <tr><td>ORA-00001</td><td>Unique/PK trùng</td><td>Đổi key hoặc MERGE</td></tr>
+          <tr><td>ORA-02291/02292</td><td>FK</td><td>Thêm cha trước / xóa con trước</td></tr>
+        </table>
+
+        <h3 class="sub-h" id="o29-2">Lỗi kết nối</h3>
+        <table>
+          <tr><th>Mã</th><th>Ý nghĩa</th></tr>
+          <tr><td>ORA-01017</td><td>Sai user/mật khẩu</td></tr>
+          <tr><td>TNS-12541</td><td>Không thấy listener</td></tr>
+          <tr><td>TNS-12514</td><td>Listener không biết service name</td></tr>
+        </table>
+      </section>
+
+      <section class="doc-section" id="o30">
+        <div class="section-eyebrow">30</div>
+        <h2>Oracle trên AWS</h2>
+
+        <h3 class="sub-h" id="o30-1">RDS for Oracle vs EC2</h3>
+        <p><strong>RDS for Oracle</strong>: AWS cài, vá, backup, failover Multi-AZ giúp bạn. Bạn không SSH vào OS Oracle. <strong>EC2 tự cài</strong>: toàn quyền (Data Guard tự dựng, agent, kernel) nhưng bạn chịu patch, backup, HA. Học / app vừa: RDS. Customize sâu / license đặc biệt: cân EC2.</p>
+
+        <h3 class="sub-h" id="o30-2">Giới hạn RDS</h3>
+        <ul>
+          <li>Không đăng nhập SYSDBA đầy đủ như on-prem; user master RDS là admin bị giới hạn.</li>
+          <li>Không vào OS, không đặt file tùy ý, không cài binary tùy ý.</li>
+          <li>Một số feature Enterprise tùy edition/license trên RDS.</li>
+        </ul>
+
+        <h3 class="sub-h" id="o30-3">Không có Aurora Oracle</h3>
+        <p>Amazon Aurora chỉ có engine <strong>MySQL</strong> và <strong>PostgreSQL</strong>. Không tồn tại “Aurora for Oracle”. Muốn Oracle managed trên AWS → <strong>RDS for Oracle</strong>. Muốn Aurora → phải đổi engine (thường PostgreSQL) và migrate SQL.</p>
+
+        <h3 class="sub-h" id="o30-4">Parameter group &amp; option group</h3>
+        <p><strong>Parameter group</strong>: tham số instance (timezone, processes…). <strong>Option group</strong>: option Oracle (Timezone file, character set liên quan, S3 integration…). Đổi một số parameter cần reboot.</p>
+
+        <h3 class="sub-h" id="o30-5">Multi-AZ, backup, snapshot</h3>
+        <p>Multi-AZ: standby đồng bộ ở AZ khác, failover tự động. Backup tự động + PITR trong retention. Snapshot thủ công giữ lâu hơn. Restore tạo instance <em>mới</em> (endpoint mới trừ khi bạn đổi DNS).</p>
+
+        <h3 class="sub-h" id="o30-6">License</h3>
+        <p><strong>License Included</strong>: tính vào giá RDS. <strong>BYOL</strong>: dùng license Oracle bạn đã có, vẫn phải tuân điều khoản Oracle. Chọn edition (SE2 vs EE) ảnh hưởng giá và feature.</p>
+
+        <h3 class="sub-h" id="o30-7">Kết nối từ VPC</h3>
+        <p>Đặt RDS trong subnet private. App cùng VPC (hoặc peering). Security group: inbound TCP <code class="inline">1521</code> chỉ từ SG của app, không 0.0.0.0/0. Endpoint dạng <code class="inline">xxx.xxx.rds.amazonaws.com</code>. Bật encryption at rest (KMS) và in-transit (native Oracle encryption / SSL tùy cấu hình).</p>
+
+        <h3 class="sub-h" id="o30-8">Migrate (DMS / SCT)</h3>
+        <p><strong>SCT</strong> (Schema Conversion Tool) đánh giá/chuyển schema Oracle → engine khác (Aurora PostgreSQL). <strong>DMS</strong> copy data, có CDC. Không phải bấm một nút là xong: hàm <code class="inline">NVL</code>, <code class="inline">ROWNUM</code>, PL/SQL package phải sửa tay — xem chương bất tương quan.</p>
+      </section>
+
+      <section class="doc-section" id="o31">
+        <div class="section-eyebrow">31</div>
+        <h2>Đối chiếu nhanh với PostgreSQL</h2>
+
+        <h3 class="sub-h" id="o31-1">Từ khóa &amp; kiểu</h3>
+        <table>
+          <tr><th>Oracle</th><th>PostgreSQL</th></tr>
+          <tr><td><code class="inline">VARCHAR2</code>, <code class="inline">NUMBER</code>, <code class="inline">DATE</code></td><td><code class="inline">VARCHAR</code>/<code class="inline">TEXT</code>, <code class="inline">NUMERIC</code>, <code class="inline">TIMESTAMP</code></td></tr>
+          <tr><td><code class="inline">NVL</code>, <code class="inline">DECODE</code></td><td><code class="inline">COALESCE</code>, <code class="inline">CASE</code></td></tr>
+          <tr><td><code class="inline">MINUS</code>, <code class="inline">ROWNUM</code>, <code class="inline">DUAL</code></td><td><code class="inline">EXCEPT</code>, <code class="inline">LIMIT</code>, không cần DUAL</td></tr>
+          <tr><td><code class="inline">MERGE</code></td><td><code class="inline">INSERT ON CONFLICT</code></td></tr>
+          <tr><td>Sequence <code class="inline">.NEXTVAL</code></td><td><code class="inline">nextval()</code> / IDENTITY</td></tr>
+        </table>
+
+        <h3 class="sub-h" id="o31-2">User / schema</h3>
+        <p>Oracle: user ≈ schema. PostgreSQL: role đăng nhập + database + schema (thường <code class="inline">public</code>) là ba lớp khác nhau. Chi tiết nằm ở chương chung “Bất tương quan”.</p>
+      </section>
+
+      </div>
+
+      <div class="track-pg">
+
+      <section class="doc-section" id="p1">
+        <div class="section-eyebrow">01</div>
+        <h2>Giới thiệu database &amp; PostgreSQL</h2>
+
+        <h3 class="sub-h" id="p1-1">Database, DBMS, RDBMS</h3>
+        <p>Giống mọi RDBMS: dữ liệu nằm trong bảng, quan hệ bằng khóa, thao tác bằng SQL, nhiều người dùng, có transaction. PostgreSQL là DBMS quan hệ mã nguồn mở, bám SQL chuẩn khá chặt và cho phép mở rộng (kiểu dữ liệu, extension, ngôn ngữ thủ tục).</p>
+
+        <h3 class="sub-h" id="p1-2">PostgreSQL là gì</h3>
+        <p>Thường gọi tắt Postgres. Cộng đồng mạnh, chạy trên Windows/Linux/macOS, được AWS Aurora hỗ trợ. Có <strong>PL/pgSQL</strong>, JSONB, full-text, nhiều index (B-tree, GIN, GiST…).</p>
+
+        <h3 class="sub-h" id="p1-3">Khi nào chọn Postgres</h3>
+        <p>Ứng dụng web, SaaS, analytics vừa, cần SQL chuẩn + JSON, không muốn license Oracle. Chọn Oracle khi tổ chức đã có stack Oracle, cần tính năng/hỗ trợ doanh nghiệp đặc thù, hoặc ứng dụng cũ viết PL/SQL.</p>
+      </section>
+
+      <section class="doc-section" id="p2">
+        <div class="section-eyebrow">02</div>
+        <h2>Cài đặt môi trường học</h2>
+
+        <h3 class="sub-h" id="p2-1">Cài trên Windows</h3>
+        <ol>
+          <li>Tải installer từ postgresql.org (EnterpriseDB) — chọn bản 16/17.</li>
+          <li>Đặt mật khẩu user <code class="inline">postgres</code>, cổng <code class="inline">5432</code>.</li>
+          <li>Tick cài <strong>Command Line Tools</strong> và Stack Builder / pgAdmin nếu muốn GUI.</li>
+        </ol>
+        <p>Services: <code class="inline">postgresql-x64-16</code> phải Running.</p>
+
+        <h3 class="sub-h" id="p2-2">psql và pgAdmin</h3>
+        <p>Thêm <code class="inline">C:\Program Files\PostgreSQL\16\bin</code> vào PATH rồi mở terminal mới:</p>
+        <pre>psql -U postgres -d postgres
+-- nhập mật khẩu, gõ \conninfo để kiểm tra</pre>
+        <p>pgAdmin 4: GUI cây object + Query Tool.</p>
+
+        <h3 class="sub-h" id="p2-3">Tạo database học tập</h3>
+        <pre>CREATE DATABASE learn;
+\c learn
+CREATE SCHEMA hr;</pre>
+        <div class="callout"><strong>Khác Oracle:</strong> bạn kết nối vào <em>một database</em>. Muốn sang DB khác phải <code class="inline">\c otherdb</code> — không query xuyên database dễ như schema Oracle.</div>
+      </section>
+
+      <section class="doc-section" id="p3">
+        <div class="section-eyebrow">03</div>
+        <h2>Kiến trúc nhìn từ người dùng</h2>
+
+        <h3 class="sub-h" id="p3-1">Cluster → database → schema</h3>
+        <p>Một instance Postgres (cluster) chứa nhiều <strong>database</strong>. Mỗi database chứa nhiều <strong>schema</strong>. Mỗi schema chứa bảng/view/function. Đây là điểm hay nhầm nhất với Oracle (user = schema trong cùng một DB).</p>
+
+        <h3 class="sub-h" id="p3-2">Role khác schema</h3>
+        <p><strong>Role</strong> là tài khoản (có thể <code class="inline">LOGIN</code>). Schema là namespace object. Role <code class="inline">app</code> có thể dùng schema <code class="inline">hr</code> nếu được GRANT — không tự sinh schema trùng tên như Oracle.</p>
+
+        <h3 class="sub-h" id="p3-3">Schema public</h3>
+        <p>Mặc định bảng tạo vào <code class="inline">public</code>. Từ PG 15, quyền tạo trên <code class="inline">public</code> bị thắt — hay gặp “permission denied for schema public”. Nên tạo schema riêng cho bài học.</p>
+
+        <h3 class="sub-h" id="p3-4">search_path</h3>
+        <pre>SHOW search_path;
+SET search_path TO hr, public;
+SELECT * FROM employee;   -- tìm hr.employee rồi public.employee</pre>
+        <p>Không thấy bảng dù đã tạo? Có thể đang ở sai database hoặc sai search_path.</p>
+      </section>
+
+      <section class="doc-section" id="p4">
+        <div class="section-eyebrow">04</div>
+        <h2>Kết nối &amp; chuỗi kết nối</h2>
+
+        <h3 class="sub-h" id="p4-1">Host, port, database, user</h3>
+        <pre>psql -h localhost -p 5432 -U postgres -d learn</pre>
+
+        <h3 class="sub-h" id="p4-2">Connection URI</h3>
+        <pre>postgresql://learn:Learn123@localhost:5432/learn
+postgresql://learn:Learn123@localhost:5432/learn?sslmode=require</pre>
+        <p>JDBC: <code class="inline">jdbc:postgresql://host:5432/learn</code>.</p>
+
+        <h3 class="sub-h" id="p4-3">pg_hba.conf</h3>
+        <p>File quyết định ai được vào bằng method nào (scram-sha-256, md5, trust, peer). Lỗi password dù gõ đúng thường do method/host trong pg_hba không khớp. Trên RDS bạn không sửa file này trực tiếp — dùng parameter / force SSL.</p>
+      </section>
+
+      <section class="doc-section" id="p5">
+        <div class="section-eyebrow">05</div>
+        <h2>Công cụ: psql và pgAdmin</h2>
+
+        <h3 class="sub-h" id="p5-1">Lệnh gạch chéo psql</h3>
+        <pre>\l          -- list database
+\c learn    -- connect
+\dn         -- schema
+\dt         -- bảng
+\d employee -- mô tả bảng
+\du         -- role
+\x          -- bật expanded display
+\timing     -- đo thời gian
+\q          -- thoát</pre>
+
+        <h3 class="sub-h" id="p5-2">Chạy file SQL</h3>
+        <pre>\i C:/scripts/setup.sql
+\i C:/scripts/seed.sql</pre>
+
+        <h3 class="sub-h" id="p5-3">pgAdmin</h3>
+        <p>Đăng ký server → database → Query Tool. F5 chạy. GUI tiện xem cây; psql nhanh hơn khi học lệnh và script.</p>
+      </section>
+
+      <section class="doc-section" id="p6">
+        <div class="section-eyebrow">06</div>
+        <h2>SQL — SELECT cơ bản</h2>
+
+        <h3 class="sub-h" id="p6-1">SELECT &amp; alias</h3>
+        <pre>SELECT first_name AS ten, salary * 12 AS luong_nam
+FROM hr.employee;</pre>
+
+        <h3 class="sub-h" id="p6-2">Không có DUAL</h3>
+        <pre>SELECT 1 + 1 AS kq, now();</pre>
+        <p>Postgres cho phép SELECT không FROM.</p>
+
+        <h3 class="sub-h" id="p6-3">DISTINCT &amp; ORDER BY</h3>
+        <pre>SELECT DISTINCT department_id FROM hr.employee
+ORDER BY department_id NULLS LAST;</pre>
+
+        <h3 class="sub-h" id="p6-4">LIMIT / OFFSET / FETCH</h3>
+        <pre>SELECT * FROM hr.employee ORDER BY salary DESC LIMIT 5;
+SELECT * FROM hr.employee ORDER BY salary DESC OFFSET 5 LIMIT 5;
+SELECT * FROM hr.employee ORDER BY salary DESC FETCH FIRST 5 ROWS ONLY;</pre>
+        <p><code class="inline">FETCH</code> là SQL chuẩn (gần Oracle 12c). <code class="inline">LIMIT</code> ngắn, rất phổ biến trên Postgres.</p>
+      </section>
+
+      <section class="doc-section" id="p7">
+        <div class="section-eyebrow">07</div>
+        <h2>Lọc dữ liệu — WHERE</h2>
+
+        <h3 class="sub-h" id="p7-1">Toán tử so sánh</h3>
+        <pre>SELECT * FROM hr.employee
+WHERE salary &gt;= 8000 AND job_id = 'IT';</pre>
+
+        <h3 class="sub-h" id="p7-2">LIKE, ILIKE, regex</h3>
+        <pre>WHERE last_name LIKE 'S%'      -- phân biệt hoa thường (phụ thuộc collation)
+WHERE last_name ILIKE 's%'     -- không phân biệt hoa thường
+WHERE last_name ~ '^[A-Z].*n$'; -- regex POSIX</pre>
+
+        <h3 class="sub-h" id="p7-3">NULL &amp; IS DISTINCT FROM</h3>
+        <pre>WHERE manager_id IS NULL
+WHERE manager_id IS NOT DISTINCT FROM 1;  -- true cả khi hai bên đều NULL</pre>
+      </section>
+
+      <section class="doc-section" id="p8">
+        <div class="section-eyebrow">08</div>
+        <h2>Kiểu dữ liệu PostgreSQL</h2>
+
+        <h3 class="sub-h" id="p8-1">Số</h3>
+        <p><code class="inline">INTEGER</code>, <code class="inline">BIGINT</code>, <code class="inline">NUMERIC(p,s)</code> (tiền tệ/chính xác), <code class="inline">REAL</code>/<code class="inline">DOUBLE PRECISION</code> (xấp xỉ). Ưu tiên <code class="inline">NUMERIC</code> cho tiền.</p>
+
+        <h3 class="sub-h" id="p8-2">Ký tự &amp; BOOLEAN</h3>
+        <p><code class="inline">TEXT</code> không giới hạn độ dài — dùng thoải mái trừ khi bạn muốn giới hạn nghiệp vụ thì <code class="inline">VARCHAR(n)</code>. <code class="inline">BOOLEAN</code>: <code class="inline">TRUE</code>/<code class="inline">FALSE</code>/<code class="inline">NULL</code> (Oracle SQL không có BOOLEAN).</p>
+
+        <h3 class="sub-h" id="p8-3">Ngày giờ</h3>
+        <p><code class="inline">DATE</code> chỉ ngày. <code class="inline">TIMESTAMP</code> không timezone. <code class="inline">TIMESTAMPTZ</code> (<code class="inline">TIMESTAMP WITH TIME ZONE</code>) nên dùng cho sự kiện thực tế. Oracle <code class="inline">DATE</code> lại gồm cả giờ — đừng map 1-1.</p>
+
+        <h3 class="sub-h" id="p8-4">UUID, BYTEA</h3>
+        <p>UUID cho id phân tán. <code class="inline">BYTEA</code> cho nhị phân (tương đương BLOB đơn giản).</p>
+
+        <h3 class="sub-h" id="p8-5">CAST và ::</h3>
+        <pre>SELECT '42'::int, CAST('2026-09-14' AS date);
+SELECT salary::text FROM hr.employee;</pre>
+      </section>
+
+      <section class="doc-section" id="p9">
+        <div class="section-eyebrow">09</div>
+        <h2>Hàm chuỗi &amp; số</h2>
+
+        <h3 class="sub-h" id="p9-1">Hàm chuỗi</h3>
+        <pre>SELECT upper(last_name), substring(first_name from 1 for 1),
+       position('@' in email), trim('  AB  '),
+       replace(job_id, 'IT', 'DEV')
+FROM hr.employee;</pre>
+
+        <h3 class="sub-h" id="p9-2">CONCAT vs ||</h3>
+        <p><code class="inline">||</code> với NULL cho NULL. <code class="inline">concat('A', NULL, 'B')</code> bỏ NULL → <code class="inline">AB</code>. Oracle <code class="inline">||</code> bỏ qua NULL.</p>
+
+        <h3 class="sub-h" id="p9-3">Hàm số</h3>
+        <pre>SELECT round(15.76, 1), trunc(15.76, 1), mod(10, 3), ceil(2.1), floor(2.9);</pre>
+      </section>
+
+      <section class="doc-section" id="p10">
+        <div class="section-eyebrow">10</div>
+        <h2>Hàm ngày giờ</h2>
+
+        <h3 class="sub-h" id="p10-1">now() và CURRENT_*</h3>
+        <pre>SELECT now(), CURRENT_DATE, CURRENT_TIMESTAMP, clock_timestamp();</pre>
+        <p><code class="inline">now()</code> cố định trong một transaction; <code class="inline">clock_timestamp()</code> đổi từng lần gọi.</p>
+
+        <h3 class="sub-h" id="p10-2">Interval</h3>
+        <pre>SELECT now() + interval '7 days',
+       hire_date + interval '3 months'
+FROM hr.employee;</pre>
+        <p>Không cộng số trần vào timestamp như Oracle <code class="inline">SYSDATE + 7</code> (ra kiểu khác / lỗi).</p>
+
+        <h3 class="sub-h" id="p10-3">date_trunc &amp; EXTRACT</h3>
+        <pre>SELECT date_trunc('month', now()), EXTRACT(YEAR FROM hire_date);</pre>
+
+        <h3 class="sub-h" id="p10-4">to_char / to_date</h3>
+        <pre>SELECT to_char(now(), 'YYYY-MM-DD HH24:MI:SS');
+SELECT to_date('14/09/2026', 'DD/MM/YYYY');</pre>
+      </section>
+
+      <section class="doc-section" id="p11">
+        <div class="section-eyebrow">11</div>
+        <h2>NULL và biểu thức điều kiện</h2>
+
+        <h3 class="sub-h" id="p11-1">NULL trong biểu thức</h3>
+        <p>Giống SQL chuẩn: <code class="inline">1 + NULL</code> là NULL. <code class="inline">''</code> là chuỗi rỗng <em>khác</em> NULL — đây là khác biệt lớn với Oracle.</p>
+
+        <h3 class="sub-h" id="p11-2">COALESCE, NULLIF, CASE</h3>
+        <pre>SELECT coalesce(phone, mobile, 'N/A'),
+       nullif(status, ''),
+       CASE WHEN salary &gt;= 10000 THEN 'HIGH' ELSE 'LOW' END
+FROM hr.employee;</pre>
+        <p>Không có <code class="inline">NVL</code>/<code class="inline">DECODE</code>.</p>
+      </section>
+
+      <section class="doc-section" id="p12">
+        <div class="section-eyebrow">12</div>
+        <h2>JOIN</h2>
+
+        <h3 class="sub-h" id="p12-1">INNER / OUTER / FULL</h3>
+        <pre>SELECT e.last_name, d.department_name
+FROM hr.employee e
+JOIN hr.department d ON d.department_id = e.department_id;
+
+SELECT e.last_name, d.department_name
+FROM hr.employee e
+FULL OUTER JOIN hr.department d ON d.department_id = e.department_id;</pre>
+        <p>FULL OUTER: giữ hàng không khớp cả hai phía — Oracle cũng có, ít dùng hơn LEFT.</p>
+
+        <h3 class="sub-h" id="p12-2">USING vs ON</h3>
+        <pre>JOIN hr.department d USING (department_id)  -- cột cùng tên</pre>
+        <p><code class="inline">ON</code> rõ ràng hơn khi tên cột khác nhau.</p>
+
+        <h3 class="sub-h" id="p12-3">NATURAL &amp; CROSS JOIN</h3>
+        <p><code class="inline">NATURAL JOIN</code> join mọi cột trùng tên — dễ vỡ khi thêm cột. Tránh. <code class="inline">CROSS JOIN</code> là tích Descartes có chủ đích.</p>
+      </section>
+
+      <section class="doc-section" id="p13">
+        <div class="section-eyebrow">13</div>
+        <h2>Tập hợp, subquery, CTE</h2>
+
+        <h3 class="sub-h" id="p13-1">UNION / INTERSECT / EXCEPT</h3>
+        <pre>SELECT job_id FROM hr.employee
+EXCEPT
+SELECT job_id FROM hr.job;   -- không phải MINUS</pre>
+
+        <h3 class="sub-h" id="p13-2">Subquery</h3>
+        <pre>SELECT last_name FROM hr.employee e
+WHERE EXISTS (
+  SELECT 1 FROM hr.department d
+  WHERE d.department_id = e.department_id AND d.department_name = 'IT'
+);</pre>
+
+        <h3 class="sub-h" id="p13-3">CTE WITH</h3>
+        <pre>WITH top_sal AS (
+  SELECT last_name, salary,
+         rank() OVER (ORDER BY salary DESC) AS rk
+  FROM hr.employee
+)
+SELECT * FROM top_sal WHERE rk &lt;= 3;</pre>
+        <p>CTE giúp tách bước, đọc dễ. Postgres dùng rất nhiều.</p>
+      </section>
+
+      <section class="doc-section" id="p14">
+        <div class="section-eyebrow">14</div>
+        <h2>Gom nhóm</h2>
+
+        <h3 class="sub-h" id="p14-1">GROUP BY / HAVING</h3>
+        <pre>SELECT department_id, count(*), avg(salary)
+FROM hr.employee
+GROUP BY department_id
+HAVING count(*) &gt;= 2;</pre>
+
+        <h3 class="sub-h" id="p14-2">FILTER</h3>
+        <pre>SELECT department_id,
+       count(*) AS all_emp,
+       count(*) FILTER (WHERE salary &gt;= 1500) AS well_paid
+FROM hr.employee
+GROUP BY department_id;</pre>
+      </section>
+
+      <section class="doc-section" id="p15">
+        <div class="section-eyebrow">15</div>
+        <h2>DDL — tạo và sửa cấu trúc</h2>
+        <p>DDL trên PostgreSQL <strong>không</strong> tự COMMIT transaction đang mở (khác Oracle). Bạn có thể gói CREATE TABLE trong BEGIN…ROLLBACK khi thử.</p>
+
+        <h3 class="sub-h" id="p15-1">CREATE / ALTER TABLE</h3>
+        <pre>CREATE TABLE hr.department (
+  department_id   integer PRIMARY KEY,
+  department_name text NOT NULL
+);
+ALTER TABLE hr.department ADD COLUMN location text;
+ALTER TABLE hr.department ALTER COLUMN location TYPE varchar(80);</pre>
+
+        <h3 class="sub-h" id="p15-2">DROP CASCADE</h3>
+        <pre>DROP TABLE hr.employee CASCADE;  -- kéo theo view/FK phụ thuộc</pre>
+        <div class="callout"><strong>Nguy hiểm:</strong> CASCADE xóa dây chuyền. Trên môi trường thật, xem dependency trước.</div>
+
+        <h3 class="sub-h" id="p15-3">TRUNCATE vs DELETE</h3>
+        <p>TRUNCATE nhanh, reset identity tùy <code class="inline">RESTART IDENTITY</code>, cần quyền. Vẫn nằm trong transaction Postgres — ROLLBACK được (khác nhiều DB khác / khác cảm giác Oracle).</p>
+      </section>
+
+      <section class="doc-section" id="p16">
+        <div class="section-eyebrow">16</div>
+        <h2>Ràng buộc (constraint)</h2>
+
+        <h3 class="sub-h" id="p16-1">Các loại constraint</h3>
+        <p>NOT NULL, UNIQUE, PRIMARY KEY, FOREIGN KEY, CHECK — giống ý Oracle. Thông báo lỗi Postgres đọc được tiếng Anh rõ (<code class="inline">violates foreign key constraint</code>).</p>
+
+        <h3 class="sub-h" id="p16-2">ON DELETE / ON UPDATE</h3>
+        <pre>department_id integer REFERENCES hr.department(department_id)
+  ON DELETE SET NULL
+  ON UPDATE CASCADE</pre>
+        <p>Oracle phổ biến ON DELETE; ON UPDATE CASCADE ít dùng hơn / khác cơ chế — đừng copy nguyên.</p>
+      </section>
+
+      <section class="doc-section" id="p17">
+        <div class="section-eyebrow">17</div>
+        <h2>DML &amp; transaction</h2>
+
+        <h3 class="sub-h" id="p17-1">INSERT … RETURNING</h3>
+        <pre>INSERT INTO hr.employee (last_name, salary)
+VALUES ('Lan', 1200)
+RETURNING employee_id, last_name;</pre>
+        <p>Lấy id vừa sinh ngay — Oracle dùng RETURNING INTO trong PL/SQL.</p>
+
+        <h3 class="sub-h" id="p17-2">UPDATE / DELETE</h3>
+        <pre>UPDATE hr.employee e
+SET salary = salary * 1.05
+FROM hr.department d
+WHERE d.department_id = e.department_id AND d.department_name = 'IT';</pre>
+        <p><code class="inline">UPDATE … FROM</code> là cú pháp Postgres rất tiện (Oracle hay viết subquery / MERGE).</p>
+
+        <h3 class="sub-h" id="p17-3">BEGIN / COMMIT / ROLLBACK</h3>
+        <pre>BEGIN;
+UPDATE hr.employee SET salary = 1 WHERE employee_id = 1;
+SAVEPOINT sp1;
+UPDATE hr.employee SET salary = 2 WHERE employee_id = 2;
+ROLLBACK TO sp1;
+COMMIT;</pre>
+        <p>psql mặc định mỗi câu là một transaction (autocommit). Gõ <code class="inline">BEGIN</code> để gói nhiều câu.</p>
+
+        <h3 class="sub-h" id="p17-4">ON CONFLICT (upsert)</h3>
+        <pre>INSERT INTO hr.department (department_id, department_name)
+VALUES (10, 'Sales')
+ON CONFLICT (department_id)
+DO UPDATE SET department_name = EXCLUDED.department_name;</pre>
+      </section>
+
+      <section class="doc-section" id="p18">
+        <div class="section-eyebrow">18</div>
+        <h2>Identity, serial, sequence</h2>
+
+        <h3 class="sub-h" id="p18-1">SERIAL vs IDENTITY</h3>
+        <pre>-- cũ, vẫn gặp:
+id serial PRIMARY KEY
+-- nên dùng:
+id integer GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY</pre>
+
+        <h3 class="sub-h" id="p18-2">nextval / setval</h3>
+        <pre>SELECT nextval('hr.employee_id_seq');
+SELECT setval('hr.employee_id_seq', (SELECT max(employee_id) FROM hr.employee));</pre>
+        <p>Sau khi import id thủ công, nhớ setval — nếu không, INSERT tiếp sẽ đụng unique.</p>
+      </section>
+
+      <section class="doc-section" id="p19">
+        <div class="section-eyebrow">19</div>
+        <h2>View</h2>
+
+        <h3 class="sub-h" id="p19-1">CREATE VIEW</h3>
+        <pre>CREATE OR REPLACE VIEW hr.v_emp_it AS
+SELECT employee_id, last_name, salary
+FROM hr.employee
+WHERE job_id = 'IT';</pre>
+
+        <h3 class="sub-h" id="p19-2">Materialized view</h3>
+        <p>Lưu kết quả ra đĩa, query nhanh, phải <code class="inline">REFRESH MATERIALIZED VIEW</code>. Dùng cho báo cáo nặng — không phải view thường.</p>
+      </section>
+
+      <section class="doc-section" id="p20">
+        <div class="section-eyebrow">20</div>
+        <h2>Index</h2>
+
+        <h3 class="sub-h" id="p20-1">B-tree</h3>
+        <pre>CREATE INDEX ix_emp_dept ON hr.employee (department_id);</pre>
+        <p>PK/UNIQUE đã có index. Đừng index mọi cột.</p>
+
+        <h3 class="sub-h" id="p20-2">EXPLAIN / EXPLAIN ANALYZE</h3>
+        <pre>EXPLAIN ANALYZE
+SELECT * FROM hr.employee WHERE department_id = 20;</pre>
+        <p>Seq Scan = quét bảng. Index Scan / Bitmap Index Scan = dùng index. ANALYZE chạy thật (cẩn thận với UPDATE/DELETE).</p>
+      </section>
+
+      <section class="doc-section" id="p21">
+        <div class="section-eyebrow">21</div>
+        <h2>Schema &amp; search_path</h2>
+
+        <h3 class="sub-h" id="p21-1">CREATE SCHEMA</h3>
+        <pre>CREATE SCHEMA hr;
+CREATE TABLE hr.employee ( ... );
+SELECT * FROM hr.employee;</pre>
+
+        <h3 class="sub-h" id="p21-2">USAGE trên schema</h3>
+        <pre>GRANT USAGE ON SCHEMA hr TO app_user;
+GRANT SELECT ON ALL TABLES IN SCHEMA hr TO app_user;</pre>
+        <p>Thiếu USAGE thì dù có SELECT trên bảng vẫn “permission denied for schema”.</p>
+      </section>
+
+      <section class="doc-section" id="p22">
+        <div class="section-eyebrow">22</div>
+        <h2>Role &amp; quyền — DCL</h2>
+
+        <h3 class="sub-h" id="p22-1">Role LOGIN</h3>
+        <pre>CREATE ROLE app_user LOGIN PASSWORD 'App123';
+ALTER ROLE app_user CREATEDB;          -- chỉ nếu cần</pre>
+        <p>Superuser <code class="inline">postgres</code> làm mọi thứ — đừng dùng cho app.</p>
+
+        <h3 class="sub-h" id="p22-2">GRANT / REVOKE</h3>
+        <pre>GRANT CONNECT ON DATABASE learn TO app_user;
+GRANT USAGE ON SCHEMA hr TO app_user;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA hr TO app_user;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA hr TO app_user;</pre>
+
+        <h3 class="sub-h" id="p22-3">DEFAULT PRIVILEGES</h3>
+        <pre>ALTER DEFAULT PRIVILEGES IN SCHEMA hr
+GRANT SELECT ON TABLES TO app_user;</pre>
+        <p>Không có dòng này, bảng <em>tạo sau</em> GRANT ALL TABLES sẽ không tự chia sẻ — lỗi rất hay gặp.</p>
+      </section>
+
+      <section class="doc-section" id="p23">
+        <div class="section-eyebrow">23</div>
+        <h2>Catalog hệ thống</h2>
+
+        <h3 class="sub-h" id="p23-1">information_schema</h3>
+        <pre>SELECT table_schema, table_name
+FROM information_schema.tables
+WHERE table_schema = 'hr';</pre>
+        <p>SQL chuẩn, dễ nhớ khi vừa học Oracle dictionary.</p>
+
+        <h3 class="sub-h" id="p23-2">pg_catalog</h3>
+        <pre>SELECT tablename FROM pg_tables WHERE schemaname = 'hr';
+SELECT indexname FROM pg_indexes WHERE tablename = 'employee';</pre>
+        <p><code class="inline">\d</code> trong psql chính là query catalog giúp bạn.</p>
+      </section>
+
+      <section class="doc-section" id="p24">
+        <div class="section-eyebrow">24</div>
+        <h2>PL/pgSQL — function</h2>
+
+        <h3 class="sub-h" id="p24-1">CREATE FUNCTION</h3>
+        <pre>CREATE OR REPLACE FUNCTION hr.tax(p_sal numeric)
+RETURNS numeric
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  RETURN p_sal * 0.1;
+END;
+$$;
+SELECT last_name, hr.tax(salary) FROM hr.employee;</pre>
+
+        <h3 class="sub-h" id="p24-2">Procedure (CALL)</h3>
+        <pre>CREATE OR REPLACE PROCEDURE hr.bump_it()
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  UPDATE hr.employee SET salary = salary * 1.1 WHERE job_id = 'IT';
+END;
+$$;
+CALL hr.bump_it();</pre>
+        <p>Trước PG 11, mọi thứ là function (kể cả “procedure” giả). Đừng nhầm <code class="inline">CALL</code> với <code class="inline">SELECT fn()</code>.</p>
+      </section>
+
+      <section class="doc-section" id="p25">
+        <div class="section-eyebrow">25</div>
+        <h2>PL/pgSQL — exception &amp; trigger</h2>
+
+        <h3 class="sub-h" id="p25-1">EXCEPTION WHEN</h3>
+        <pre>BEGIN
+  INSERT INTO hr.department VALUES (10, 'X');
+EXCEPTION
+  WHEN unique_violation THEN
+    RAISE NOTICE 'Đã tồn tại';
+END;</pre>
+
+        <h3 class="sub-h" id="p25-2">Trigger nhập môn</h3>
+        <pre>CREATE OR REPLACE FUNCTION hr.set_updated_at()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  NEW.updated_at := now();
+  RETURN NEW;
+END;
+$$;
+CREATE TRIGGER trg_emp_updated
+BEFORE UPDATE ON hr.employee
+FOR EACH ROW EXECUTE FUNCTION hr.set_updated_at();</pre>
+        <p>Function trigger phải <code class="inline">RETURNS trigger</code> và <code class="inline">RETURN NEW</code> (hoặc OLD).</p>
+      </section>
+
+      <section class="doc-section" id="p26">
+        <div class="section-eyebrow">26</div>
+        <h2>JSON &amp; JSONB</h2>
+
+        <h3 class="sub-h" id="p26-1">JSON vs JSONB</h3>
+        <p><code class="inline">JSON</code> lưu text gốc. <code class="inline">JSONB</code> parse sẵn, index được, nên dùng khi query.</p>
+
+        <h3 class="sub-h" id="p26-2">Toán tử -&gt;&gt; và lọc</h3>
+        <pre>SELECT extra-&gt;&gt;'city'
+FROM hr.employee
+WHERE extra-&gt;&gt;'city' = 'Hanoi';
+SELECT jsonb_build_object('city', 'Hanoi', 'level', 2);</pre>
+        <p><code class="inline">-&gt;</code> trả JSON; <code class="inline">-&gt;&gt;</code> trả text.</p>
+
+        <h3 class="sub-h" id="p26-3">GIN index</h3>
+        <pre>CREATE INDEX ix_emp_extra ON hr.employee USING GIN (extra);</pre>
+        <p>Cần khi lọc JSONB trên bảng lớn. Bảng học vài chục hàng thì chưa cần.</p>
+      </section>
+
+      <section class="doc-section" id="p27">
+        <div class="section-eyebrow">27</div>
+        <h2>Extension</h2>
+
+        <h3 class="sub-h" id="p27-1">CREATE EXTENSION</h3>
+        <pre>CREATE EXTENSION IF NOT EXISTS pgcrypto;</pre>
+        <p>Extension gắn vào <em>database</em> hiện tại, không phải cả cluster.</p>
+
+        <h3 class="sub-h" id="p27-2">uuid &amp; pgcrypto</h3>
+        <pre>SELECT gen_random_uuid();   -- PG 13+ built-in; bản cũ dùng uuid-ossp</pre>
+        <p><code class="inline">pg_trgm</code> hỗ trợ tìm gần đúng; <code class="inline">citext</code> cho cột chữ không phân biệt hoa thường. Chỉ cài khi cần.</p>
+      </section>
+
+      <section class="doc-section" id="p28">
+        <div class="section-eyebrow">28</div>
+        <h2>Copy dữ liệu vào/ra</h2>
+
+        <h3 class="sub-h" id="p28-1">\copy vs COPY</h3>
+        <p><code class="inline">COPY</code> đọc file <em>trên server</em> (cần quyền siêu user / RDS hạn chế). <code class="inline">\copy</code> trong psql đọc file <em>máy bạn</em> — dùng cái này khi học.</p>
+
+        <h3 class="sub-h" id="p28-2">CSV</h3>
+        <pre>\copy hr.department FROM 'C:/tmp/dept.csv' WITH (FORMAT csv, HEADER true, NULL '');
+\copy hr.department TO 'C:/tmp/out.csv' WITH (FORMAT csv, HEADER true);</pre>
+        <p>Lỗi hay gặp: encoding, sai dấu phân cách, NULL thành chuỗi rỗng, header lệch cột.</p>
+      </section>
+
+      <section class="doc-section" id="p29">
+        <div class="section-eyebrow">29</div>
+        <h2>Thực hành mini</h2>
+
+        <h3 class="sub-h" id="p29-1">Schema department / employee</h3>
+        <pre>CREATE SCHEMA hr;
+CREATE TABLE hr.department (
+  department_id   integer GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  department_name text NOT NULL
+);
+CREATE TABLE hr.job (
+  job_id    text PRIMARY KEY,
+  job_title text NOT NULL
+);
+CREATE TABLE hr.employee (
+  employee_id   integer GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  last_name     text NOT NULL,
+  salary        numeric(8,2) CHECK (salary &gt; 0),
+  department_id integer REFERENCES hr.department,
+  job_id        text REFERENCES hr.job,
+  manager_id    integer REFERENCES hr.employee,
+  extra         jsonb
+);
+INSERT INTO hr.department (department_name) VALUES ('Sales'), ('IT');
+INSERT INTO hr.job VALUES ('SA', 'Sales Rep'), ('IT', 'Developer');
+INSERT INTO hr.employee (last_name, salary, department_id, job_id, extra)
+VALUES ('Lan', 1200, 1, 'SA', '{"city":"Hanoi"}'),
+       ('Minh', 1800, 2, 'IT', '{"city":"HCM"}');</pre>
+
+        <h3 class="sub-h" id="p29-2">Query và function</h3>
+        <pre>SELECT d.department_name, count(*), avg(e.salary)
+FROM hr.employee e
+JOIN hr.department d USING (department_id)
+GROUP BY d.department_name;
+
+SELECT last_name FROM hr.employee WHERE extra-&gt;&gt;'city' = 'Hanoi';</pre>
+      </section>
+
+      <section class="doc-section" id="p30">
+        <div class="section-eyebrow">30</div>
+        <h2>Lỗi Postgres hay gặp</h2>
+
+        <h3 class="sub-h" id="p30-1">relation does not exist</h3>
+        <p>Sai database (<code class="inline">\c</code>), sai schema/search_path, sai tên (Postgres lower-case tên không quote: <code class="inline">Employee</code> → <code class="inline">employee</code>). Tên có hoa phải viết <code class="inline">"Employee"</code>.</p>
+
+        <h3 class="sub-h" id="p30-2">Permission &amp; constraint</h3>
+        <p><code class="inline">permission denied</code>: thiếu GRANT/USAGE. <code class="inline">duplicate key</code>: trùng PK/UNIQUE. <code class="inline">foreign key violation</code>: thiếu hàng cha. <code class="inline">invalid input syntax for type</code>: ép kiểu sai.</p>
+
+        <h3 class="sub-h" id="p30-3">Auth / pg_hba</h3>
+        <p>Password fail, peer auth (local Unix), SSL required trên RDS. Đọc đúng dòng pg_hba / thông báo server, đừng chỉ đổi mật khẩu mù.</p>
+      </section>
+
+      <section class="doc-section" id="p31">
+        <div class="section-eyebrow">31</div>
+        <h2>PostgreSQL trên AWS</h2>
+
+        <h3 class="sub-h" id="p31-1">RDS vs Aurora vs EC2</h3>
+        <ul>
+          <li><strong>RDS for PostgreSQL:</strong> Postgres “gần vanilla”, managed backup/patch/Multi-AZ.</li>
+          <li><strong>Aurora PostgreSQL:</strong> tương thích Postgres, storage Aurora (replica nhanh, failover nhanh, scale read).</li>
+          <li><strong>EC2 tự cài:</strong> tối đa kiểm soát, tự chịu HA/backup.</li>
+        </ul>
+        <p>Học / app vừa: RDS. Cần đọc nhiều replica / HA kiểu Aurora: Aurora. Extension lạ không có trên RDS: cân EC2.</p>
+
+        <h3 class="sub-h" id="p31-2">Aurora PostgreSQL</h3>
+        <p>Storage tách compute, 6 bản sao trên 3 AZ. Failover writer còn replica. Một số extension/parameter khác RDS vanilla — kiểm tra compatibility khi port từ Postgres tự cài.</p>
+
+        <h3 class="sub-h" id="p31-3">Multi-AZ, replica, backup</h3>
+        <p>RDS Multi-AZ: standby (failover, không dùng đọc). Read replica: scale đọc, bất đồng bộ. Backup tự động + snapshot + PITR. Aurora: replica vừa HA vừa đọc được.</p>
+
+        <h3 class="sub-h" id="p31-4">Parameter group &amp; endpoint</h3>
+        <p>Parameter group: <code class="inline">timezone</code>, <code class="inline">shared_buffers</code> (RDS hạn mức), <code class="inline">rds.force_ssl</code>. Endpoint <code class="inline">xxx.rds.amazonaws.com</code>, cổng <strong>5432</strong>. Security group chỉ mở từ app. Client: <code class="inline">sslmode=require</code>.</p>
+        <p>IAM database authentication là option (token thay password) — biết là có, chưa bắt buộc khi học SQL.</p>
+
+        <h3 class="sub-h" id="p31-5">Aurora Serverless v2</h3>
+        <p>Scale ACU theo tải, hợp dev/test hoặc tải thất thường. Không phải lúc nào cũng rẻ hơn provisioned. Tối thiểu ACU vẫn tính tiền khi cluster bật.</p>
+
+        <h3 class="sub-h" id="p31-6">RDS Proxy</h3>
+        <p>Connection pool đứng trước RDS/Aurora. Hữu ích khi Lambda/app mở rất nhiều connection ngắn. Thêm endpoint, thêm IAM/SG — không thay đổi SQL.</p>
+
+        <h3 class="sub-h" id="p31-7">Migrate</h3>
+        <p>Cùng engine: <code class="inline">pg_dump</code> / <code class="inline">pg_restore</code>, hoặc DMS. Oracle → Aurora PostgreSQL: SCT đánh giá + DMS data + sửa SQL (NVL, DUAL, PL/SQL). Xem chương bất tương quan.</p>
+      </section>
+
+      <section class="doc-section" id="p32">
+        <div class="section-eyebrow">32</div>
+        <h2>Đối chiếu nhanh với Oracle</h2>
+
+        <h3 class="sub-h" id="p32-1">Bảng tương đương</h3>
+        <table>
+          <tr><th>PostgreSQL</th><th>Oracle</th></tr>
+          <tr><td>role + database + schema</td><td>user ≈ schema</td></tr>
+          <tr><td><code class="inline">LIMIT</code> / <code class="inline">FETCH</code></td><td><code class="inline">ROWNUM</code> / <code class="inline">FETCH</code></td></tr>
+          <tr><td><code class="inline">EXCEPT</code></td><td><code class="inline">MINUS</code></td></tr>
+          <tr><td><code class="inline">ON CONFLICT</code></td><td><code class="inline">MERGE</code></td></tr>
+          <tr><td>DDL trong transaction</td><td>DDL hay commit ngầm</td></tr>
+          <tr><td><code class="inline">''</code> ≠ NULL</td><td><code class="inline">''</code> = NULL</td></tr>
+        </table>
+
+        <h3 class="sub-h" id="p32-2">Aurora chỉ Postgres/MySQL</h3>
+        <p>Không migrate “lift-and-shift” Oracle sang Aurora mà giữ nguyên dialect. RDS Oracle là lựa chọn managed nếu phải giữ Oracle.</p>
+      </section>
+
+      </div>
+
+      <div class="track-db-compare">
+      <section class="doc-section" id="dx">
+        <div class="section-eyebrow">DX</div>
+        <h2>Bất tương quan Oracle ↔ PostgreSQL</h2>
+        <p>Chương này dùng chung cho cả hai track. “Bất tương quan” = chỗ <strong>cùng ý nghiệp vụ nhưng khác cú pháp, ngữ nghĩa, hoặc không tồn tại</strong> — copy SQL từ bên này sang bên kia sẽ sai. Nhóm theo DDL, DML, DCL, TCL, rồi kiểu dữ liệu / NULL / procedural.</p>
+
+        <h3 class="sub-h" id="dx-1">Bốn nhóm lệnh SQL</h3>
+        <table>
+          <tr><th>Nhóm</th><th>Việc</th><th>Lệnh tiêu biểu</th></tr>
+          <tr><td><strong>DDL</strong> — Data Definition</td><td>Định nghĩa object</td><td><code class="inline">CREATE</code> <code class="inline">ALTER</code> <code class="inline">DROP</code> <code class="inline">TRUNCATE</code> <code class="inline">COMMENT</code></td></tr>
+          <tr><td><strong>DML</strong> — Data Manipulation</td><td>Sửa dữ liệu hàng</td><td><code class="inline">SELECT</code>* <code class="inline">INSERT</code> <code class="inline">UPDATE</code> <code class="inline">DELETE</code> <code class="inline">MERGE</code></td></tr>
+          <tr><td><strong>DCL</strong> — Data Control</td><td>Quyền</td><td><code class="inline">GRANT</code> <code class="inline">REVOKE</code></td></tr>
+          <tr><td><strong>TCL</strong> — Transaction Control</td><td>Giao dịch</td><td><code class="inline">COMMIT</code> <code class="inline">ROLLBACK</code> <code class="inline">SAVEPOINT</code></td></tr>
+        </table>
+        <p class="callout" style="margin-top:12px">*Một số giáo trình xếp SELECT riêng (DQL). Ở đây SELECT đi cùng DML vì cùng thao tác dữ liệu.</p>
+        <div class="callout"><strong>Lớp chứa object:</strong> Oracle — user/schema trong một database (PDB). PostgreSQL — cluster → database → schema → object. Đây là gốc của rất nhiều lỗi “bảng không tồn tại” khi chuyển môi trường.</div>
+
+        <h3 class="sub-h" id="dx-2">DDL</h3>
+        <table>
+          <tr><th>Chủ đề</th><th>Oracle</th><th>PostgreSQL</th></tr>
+          <tr><td>DDL và transaction</td><td>Hầu hết DDL <strong>commit ngầm</strong> transaction đang mở</td><td>DDL nằm trong transaction, <code class="inline">ROLLBACK</code> được</td></tr>
+          <tr><td>Kiểu cột phổ biến</td><td><code class="inline">VARCHAR2</code>, <code class="inline">NUMBER</code>, <code class="inline">DATE</code> (có giờ)</td><td><code class="inline">TEXT</code>/<code class="inline">VARCHAR</code>, <code class="inline">NUMERIC</code>/<code class="inline">INT</code>, <code class="inline">DATE</code> (chỉ ngày) + <code class="inline">TIMESTAMPTZ</code></td></tr>
+          <tr><td>Boolean</td><td>Không có trong SQL; dùng CHAR/NUMBER</td><td><code class="inline">BOOLEAN</code></td></tr>
+          <tr><td>Identity</td><td><code class="inline">GENERATED AS IDENTITY</code> hoặc <code class="inline">SEQUENCE</code></td><td><code class="inline">GENERATED … IDENTITY</code> (nên dùng) hoặc <code class="inline">SERIAL</code></td></tr>
+          <tr><td>Tên object</td><td>Không quote → <strong>HOA</strong></td><td>Không quote → <strong>thường</strong></td></tr>
+          <tr><td>DROP phụ thuộc</td><td>Thường phải xóa FK/con trước; <code class="inline">CASCADE CONSTRAINTS</code> trên DROP TABLE</td><td><code class="inline">DROP … CASCADE</code> rất mạnh</td></tr>
+          <tr><td>Comment</td><td><code class="inline">COMMENT ON TABLE/COLUMN</code></td><td>Giống, lưu catalog khác</td></tr>
+          <tr><td>Synonym</td><td>Có (private/public)</td><td>Không có synonym; dùng view / search_path</td></tr>
+        </table>
+        <pre>-- Oracle: CREATE rồi INSERT trong cùng “giao dịch học” — DDL đã commit CREATE
+-- Postgres: BEGIN; CREATE TABLE t(id int); ROLLBACK; -- bảng biến mất</pre>
+
+        <h3 class="sub-h" id="dx-3">DML</h3>
+        <table>
+          <tr><th>Chủ đề</th><th>Oracle</th><th>PostgreSQL</th></tr>
+          <tr><td>SELECT không FROM</td><td>Bắt buộc <code class="inline">FROM dual</code></td><td><code class="inline">SELECT 1;</code> được</td></tr>
+          <tr><td>Phân trang</td><td><code class="inline">ROWNUM</code>, <code class="inline">FETCH FIRST</code></td><td><code class="inline">LIMIT</code>, <code class="inline">OFFSET</code>, <code class="inline">FETCH</code></td></tr>
+          <tr><td>Tập hợp</td><td><code class="inline">MINUS</code></td><td><code class="inline">EXCEPT</code></td></tr>
+          <tr><td>Upsert</td><td><code class="inline">MERGE</code></td><td><code class="inline">INSERT … ON CONFLICT</code> (cũng có MERGE từ PG 15)</td></tr>
+          <tr><td>RETURNING</td><td>Chủ yếu trong PL/SQL <code class="inline">RETURNING INTO</code></td><td><code class="inline">INSERT/UPDATE/DELETE … RETURNING</code> ngay trên SQL</td></tr>
+          <tr><td>UPDATE join</td><td>Subquery / MERGE</td><td><code class="inline">UPDATE … FROM</code></td></tr>
+          <tr><td>ILIKE / regex</td><td>Không ILIKE; <code class="inline">REGEXP_LIKE</code></td><td><code class="inline">ILIKE</code>, <code class="inline">~</code></td></tr>
+          <tr><td>DUMMY rownum top-N</td><td>Hay bọc subquery + <code class="inline">ROWNUM</code></td><td>Viết thẳng <code class="inline">ORDER BY … LIMIT</code></td></tr>
+        </table>
+        <pre>-- Sai nếu paste Oracle sang PG:
+SELECT SYSDATE FROM dual;
+SELECT * FROM emp WHERE ROWNUM &lt;= 5;
+SELECT a FROM t1 MINUS SELECT a FROM t2;
+
+-- PG:
+SELECT now();
+SELECT * FROM emp ORDER BY id LIMIT 5;
+SELECT a FROM t1 EXCEPT SELECT a FROM t2;</pre>
+
+        <h3 class="sub-h" id="dx-4">DCL</h3>
+        <table>
+          <tr><th>Chủ đề</th><th>Oracle</th><th>PostgreSQL</th></tr>
+          <tr><td>Chủ object</td><td>Schema = user sở hữu</td><td>Owner là role; object nằm trong schema</td></tr>
+          <tr><td>Vào hệ thống</td><td><code class="inline">CREATE SESSION</code></td><td><code class="inline">LOGIN</code> + <code class="inline">CONNECT</code> on database</td></tr>
+          <tr><td>Quyền schema</td><td>Ít khi tách “USAGE schema”</td><td>Cần <code class="inline">USAGE ON SCHEMA</code> rồi mới tới table</td></tr>
+          <tr><td>Bảng tạo sau</td><td>GRANT từng object / role</td><td>Nhớ <code class="inline">ALTER DEFAULT PRIVILEGES</code></td></tr>
+          <tr><td>Sequence</td><td>GRANT trên sequence object</td><td>GRANT USAGE, SELECT trên sequence (identity cũng có seq ẩn)</td></tr>
+          <tr><td>Public</td><td>Public synonym / PUBLIC role</td><td>Role <code class="inline">PUBLIC</code> + schema <code class="inline">public</code> — hai khái niệm, đừng nhầm</td></tr>
+        </table>
+        <div class="callout"><strong>Migrate quyền:</strong> script GRANT Oracle không map 1-1. Phải thiết kế lại: database, schema, role LOGIN, USAGE, DEFAULT PRIVILEGES.</div>
+
+        <h3 class="sub-h" id="dx-5">TCL</h3>
+        <table>
+          <tr><th>Chủ đề</th><th>Oracle</th><th>PostgreSQL</th></tr>
+          <tr><td>Bắt đầu transaction</td><td>DML đầu tiên mở transaction (session)</td><td>Autocommit từng câu trừ khi <code class="inline">BEGIN</code></td></tr>
+          <tr><td>COMMIT / ROLLBACK</td><td>Có; tool hay auto-commit</td><td>Có; psql auto-commit</td></tr>
+          <tr><td>SAVEPOINT</td><td>Có</td><td>Có</td></tr>
+          <tr><td>DDL giữa chừng</td><td>Phá / commit transaction hiện tại</td><td>Không tự commit</td></tr>
+          <tr><td>TRUNCATE</td><td>DDL, không rollback</td><td>Rollback được trong txn</td></tr>
+          <tr><td>Isolation mặc định</td><td>Read committed + read consistency (undo)</td><td>Read committed (MVCC)</td></tr>
+        </table>
+        <p>Thực hành: tắt auto-commit trên GUI khi học. Đừng giả định “CREATE TABLE xong thì INSERT trước đó đã lưu” — đúng Oracle, sai Postgres (và ngược lại nếu bạn ROLLBACK sau DDL).</p>
+
+        <h3 class="sub-h" id="dx-6">Kiểu dữ liệu &amp; hàm</h3>
+        <table>
+          <tr><th>Oracle</th><th>PostgreSQL gần đúng</th><th>Bẫy</th></tr>
+          <tr><td><code class="inline">VARCHAR2(n)</code></td><td><code class="inline">VARCHAR(n)</code> / <code class="inline">TEXT</code></td><td>Đơn vị byte/char tùy charset Oracle</td></tr>
+          <tr><td><code class="inline">NUMBER</code> / <code class="inline">NUMBER(p,s)</code></td><td><code class="inline">NUMERIC</code>, hoặc <code class="inline">INT</code> nếu nguyên</td><td>NUMBER không scale ≠ INTEGER vô hạn</td></tr>
+          <tr><td><code class="inline">DATE</code></td><td><code class="inline">TIMESTAMP</code> (vì DATE Oracle có giờ)</td><td>Map sang <code class="inline">DATE</code> PG sẽ mất giờ</td></tr>
+          <tr><td><code class="inline">SYSDATE</code></td><td><code class="inline">now()</code> / <code class="inline">CURRENT_TIMESTAMP</code></td><td><code class="inline">SYSDATE+7</code> ≠ timestamp + 7</td></tr>
+          <tr><td><code class="inline">NVL(a,b)</code></td><td><code class="inline">COALESCE(a,b)</code></td><td>NVL chỉ 2 đối số</td></tr>
+          <tr><td><code class="inline">DECODE</code></td><td><code class="inline">CASE</code></td><td></td></tr>
+          <tr><td><code class="inline">NVL2</code>, <code class="inline">TO_CHAR</code> mask</td><td><code class="inline">CASE</code>, <code class="inline">to_char</code> (mask hơi khác)</td><td>So mask FM, MON…</td></tr>
+          <tr><td><code class="inline">||</code> bỏ qua NULL</td><td><code class="inline">||</code> ra NULL nếu một bên NULL</td><td>Dùng <code class="inline">concat()</code> phía PG</td></tr>
+        </table>
+
+        <h3 class="sub-h" id="dx-7">NULL, chuỗi rỗng, định danh</h3>
+        <ul>
+          <li>Oracle: <code class="inline">''</code> bị biến thành NULL. <code class="inline">WHERE col = ''</code> không ra hàng (phải <code class="inline">IS NULL</code>).</li>
+          <li>PostgreSQL: <code class="inline">''</code> là empty string, khác NULL. Constraint <code class="inline">NOT NULL</code> vẫn nhận <code class="inline">''</code>.</li>
+          <li>Định danh không quote: Oracle lưu <code class="inline">EMPLOYEE</code>; Postgres lưu <code class="inline">employee</code>. Quote <code class="inline">"Employee"</code> thì phân biệt hoa thường cả hai bên — tránh quote trừ khi bắt buộc.</li>
+        </ul>
+
+        <h3 class="sub-h" id="dx-8">PL/SQL vs PL/pgSQL</h3>
+        <table>
+          <tr><th></th><th>PL/SQL</th><th>PL/pgSQL</th></tr>
+          <tr><td>Block nặc danh</td><td><code class="inline">DECLARE…BEGIN…END;</code> + <code class="inline">/</code></td><td><code class="inline">DO $$ … $$;</code></td></tr>
+          <tr><td>Package</td><td>Có spec/body</td><td>Không có package; dùng schema + nhiều function</td></tr>
+          <tr><td>Procedure</td><td>Lâu đời, <code class="inline">EXEC</code></td><td>Từ PG 11, <code class="inline">CALL</code></td></tr>
+          <tr><td>SELECT INTO 0 hàng</td><td><code class="inline">NO_DATA_FOUND</code></td><td>Biến NULL, không exception mặc định (trừ <code class="inline">STRICT</code>)</td></tr>
+          <tr><td>Cursor FOR</td><td>Có</td><td>Có</td></tr>
+          <tr><td>DBMS_OUTPUT</td><td>Gói sẵn</td><td><code class="inline">RAISE NOTICE</code></td></tr>
+        </table>
+        <div class="callout"><strong>Không dịch máy PL/SQL → PL/pgSQL.</strong> Package, pragma, exception, SQL động khác nhau. SCT chỉ làm được phần cơ bản.</div>
+
+        <h3 class="sub-h" id="dx-9">Checklist migrate</h3>
+        <ol>
+          <li>Vẽ lại: database nào, schema nào, role nào (đừng giữ “mỗi user một schema” Oracle nếu không cần).</li>
+          <li>Map kiểu: <code class="inline">DATE</code> → timestamp? <code class="inline">NUMBER</code> → numeric hay int?</li>
+          <li>Thay <code class="inline">DUAL</code>, <code class="inline">ROWNUM</code>, <code class="inline">MINUS</code>, <code class="inline">NVL</code>, <code class="inline">DECODE</code>, <code class="inline">SYSDATE</code>.</li>
+          <li>Xử lý <code class="inline">''</code> vs NULL trong dữ liệu và CHECK.</li>
+          <li>Viết lại MERGE / sequence / identity; setval sau khi load.</li>
+          <li>Quyền: USAGE schema + DEFAULT PRIVILEGES.</li>
+          <li>Package PL/SQL → function/procedure rời; test exception.</li>
+          <li>Trên AWS: RDS Oracle nếu giữ dialect; Aurora PostgreSQL nếu chịu rewrite. Không có Aurora Oracle.</li>
+        </ol>
+      </section>
+      </div>
+
+      <div class="track-oracle">
+      <section class="doc-section" id="o32">
+        <div class="section-eyebrow">33</div>
+        <h2>Tài liệu tham khảo</h2>
+        <p>Nội dung track Oracle diễn giải lại (không sao chép nguyên văn) dựa trên:</p>
+        <ul>
+          <li><a href="https://docs.oracle.com/en/database/oracle/oracle-database/" target="_blank">Oracle Database Documentation</a></li>
+          <li><a href="https://docs.oracle.com/en/database/oracle/oracle-database/23/sqlrf/" target="_blank">Oracle SQL Language Reference</a></li>
+          <li><a href="https://docs.oracle.com/en/database/oracle/oracle-database/23/lnpls/" target="_blank">Oracle PL/SQL Language Reference</a></li>
+          <li><a href="https://www.oracle.com/database/free/" target="_blank">Oracle Database Free</a></li>
+          <li><a href="https://livesql.oracle.com/" target="_blank">Oracle Live SQL</a></li>
+          <li><a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_Oracle.html" target="_blank">AWS — RDS for Oracle User Guide</a></li>
+        </ul>
+      </section>
+      </div>
+
+      <div class="track-pg">
+      <section class="doc-section" id="p33">
+        <div class="section-eyebrow">34</div>
+        <h2>Tài liệu tham khảo</h2>
+        <p>Nội dung track PostgreSQL diễn giải lại (không sao chép nguyên văn) dựa trên:</p>
+        <ul>
+          <li><a href="https://www.postgresql.org/docs/current/" target="_blank">PostgreSQL Official Documentation</a></li>
+          <li><a href="https://www.postgresql.org/docs/current/tutorial.html" target="_blank">PostgreSQL Tutorial</a></li>
+          <li><a href="https://www.postgresql.org/docs/current/sql.html" target="_blank">PostgreSQL SQL Commands</a></li>
+          <li><a href="https://www.postgresql.org/docs/current/plpgsql.html" target="_blank">PL/pgSQL</a></li>
+          <li><a href="https://www.pgadmin.org/docs/" target="_blank">pgAdmin Documentation</a></li>
+          <li><a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_PostgreSQL.html" target="_blank">AWS — RDS for PostgreSQL</a></li>
+          <li><a href="https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/Aurora.AuroraPostgreSQL.html" target="_blank">AWS — Aurora PostgreSQL</a></li>
+        </ul>
+      </section>
+      </div>
+
     </div>
   </main>
 </div>
@@ -4234,12 +5854,21 @@ npx expo start   # quét QR code bằng app Expo Go để xem trực tiếp trê
     {id:'b11', num:'11', vi:'Tài liệu tham khảo', ja:'Tài liệu tham khảo', subs:[]},
   ];
 
+
+  const tocOracle = [{"id":"o1","num":"01","vi":"Giới thiệu database & Oracle","ja":"Giới thiệu database & Oracle","subs":[{"id":"o1-1","vi":"Database, DBMS, RDBMS","ja":"Database, DBMS, RDBMS"},{"id":"o1-2","vi":"SQL vs NoSQL","ja":"SQL vs NoSQL"},{"id":"o1-3","vi":"Oracle Database là gì","ja":"Oracle Database là gì"},{"id":"o1-4","vi":"Edition để học","ja":"Edition để học"},{"id":"o1-5","vi":"Instance vs database vs schema","ja":"Instance vs database vs schema"}]},{"id":"o2","num":"02","vi":"Cài đặt môi trường học","ja":"Cài đặt môi trường học","subs":[{"id":"o2-1","vi":"Chọn cách học","ja":"Chọn cách học"},{"id":"o2-2","vi":"Cài Oracle Free / XE","ja":"Cài Oracle Free / XE"},{"id":"o2-3","vi":"SQL Developer / SQLcl","ja":"SQL Developer / SQLcl"},{"id":"o2-4","vi":"Lỗi hay gặp khi cài","ja":"Lỗi hay gặp khi cài"}]},{"id":"o3","num":"03","vi":"Kết nối: SID, service, listener","ja":"Kết nối: SID, service, listener","subs":[{"id":"o3-1","vi":"SID vs service name","ja":"SID vs service name"},{"id":"o3-2","vi":"Listener & cổng 1521","ja":"Listener & cổng 1521"},{"id":"o3-3","vi":"Easy Connect","ja":"Easy Connect"},{"id":"o3-4","vi":"tnsnames.ora","ja":"tnsnames.ora"}]},{"id":"o4","num":"04","vi":"Công cụ SQL*Plus, SQLcl, SQL Developer","ja":"Công cụ SQL*Plus, SQLcl, SQL Developer","subs":[{"id":"o4-1","vi":"Kết nối lần đầu","ja":"Kết nối lần đầu"},{"id":"o4-2","vi":"Lệnh môi trường","ja":"Lệnh môi trường"},{"id":"o4-3","vi":"SQL Developer","ja":"SQL Developer"},{"id":"o4-4","vi":"Script .sql","ja":"Script .sql"}]},{"id":"o5","num":"05","vi":"User, schema, tablespace","ja":"User, schema, tablespace","subs":[{"id":"o5-1","vi":"User và schema","ja":"User và schema"},{"id":"o5-2","vi":"Tablespace","ja":"Tablespace"},{"id":"o5-3","vi":"SYS, SYSTEM","ja":"SYS, SYSTEM"},{"id":"o5-4","vi":"Tạo user học tập","ja":"Tạo user học tập"}]},{"id":"o6","num":"06","vi":"SQL — SELECT cơ bản","ja":"SQL — SELECT cơ bản","subs":[{"id":"o6-1","vi":"Cấu trúc SELECT","ja":"Cấu trúc SELECT"},{"id":"o6-2","vi":"Alias & biểu thức","ja":"Alias & biểu thức"},{"id":"o6-3","vi":"DUAL","ja":"DUAL"},{"id":"o6-4","vi":"DISTINCT & ROWNUM","ja":"DISTINCT & ROWNUM"},{"id":"o6-5","vi":"ORDER BY","ja":"ORDER BY"}]},{"id":"o7","num":"07","vi":"Lọc dữ liệu — WHERE","ja":"Lọc dữ liệu — WHERE","subs":[{"id":"o7-1","vi":"Toán tử so sánh","ja":"Toán tử so sánh"},{"id":"o7-2","vi":"IN, BETWEEN, LIKE","ja":"IN, BETWEEN, LIKE"},{"id":"o7-3","vi":"NULL","ja":"NULL"},{"id":"o7-4","vi":"Thứ tự điều kiện","ja":"Thứ tự điều kiện"}]},{"id":"o8","num":"08","vi":"Kiểu dữ liệu Oracle","ja":"Kiểu dữ liệu Oracle","subs":[{"id":"o8-1","vi":"Ký tự","ja":"Ký tự"},{"id":"o8-2","vi":"Số","ja":"Số"},{"id":"o8-3","vi":"Ngày giờ","ja":"Ngày giờ"},{"id":"o8-4","vi":"CLOB / BLOB","ja":"CLOB / BLOB"},{"id":"o8-5","vi":"Chuyển kiểu","ja":"Chuyển kiểu"}]},{"id":"o9","num":"09","vi":"Hàm chuỗi & số","ja":"Hàm chuỗi & số","subs":[{"id":"o9-1","vi":"Hàm chuỗi","ja":"Hàm chuỗi"},{"id":"o9-2","vi":"Hàm số","ja":"Hàm số"},{"id":"o9-3","vi":"LPAD / RPAD","ja":"LPAD / RPAD"}]},{"id":"o10","num":"10","vi":"Hàm ngày giờ","ja":"Hàm ngày giờ","subs":[{"id":"o10-1","vi":"SYSDATE & SYSTIMESTAMP","ja":"SYSDATE & SYSTIMESTAMP"},{"id":"o10-2","vi":"Tính toán ngày","ja":"Tính toán ngày"},{"id":"o10-3","vi":"EXTRACT, TRUNC","ja":"EXTRACT, TRUNC"},{"id":"o10-4","vi":"Format mask","ja":"Format mask"}]},{"id":"o11","num":"11","vi":"NULL và biểu thức điều kiện","ja":"NULL và biểu thức điều kiện","subs":[{"id":"o11-1","vi":"NULL lan truyền","ja":"NULL lan truyền"},{"id":"o11-2","vi":"NVL, NVL2, COALESCE","ja":"NVL, NVL2, COALESCE"},{"id":"o11-3","vi":"DECODE vs CASE","ja":"DECODE vs CASE"}]},{"id":"o12","num":"12","vi":"JOIN","ja":"JOIN","subs":[{"id":"o12-1","vi":"Khóa và quan hệ","ja":"Khóa và quan hệ"},{"id":"o12-2","vi":"INNER / OUTER JOIN","ja":"INNER / OUTER JOIN"},{"id":"o12-3","vi":"Self join","ja":"Self join"},{"id":"o12-4","vi":"Cú pháp (+)","ja":"Cú pháp (+)"},{"id":"o12-5","vi":"Cartesian product","ja":"Cartesian product"}]},{"id":"o13","num":"13","vi":"Tập hợp & subquery","ja":"Tập hợp & subquery","subs":[{"id":"o13-1","vi":"UNION / INTERSECT / MINUS","ja":"UNION / INTERSECT / MINUS"},{"id":"o13-2","vi":"Subquery WHERE","ja":"Subquery WHERE"},{"id":"o13-3","vi":"Scalar subquery","ja":"Scalar subquery"},{"id":"o13-4","vi":"Inline view","ja":"Inline view"}]},{"id":"o14","num":"14","vi":"Gom nhóm","ja":"Gom nhóm","subs":[{"id":"o14-1","vi":"Hàm tổng hợp","ja":"Hàm tổng hợp"},{"id":"o14-2","vi":"GROUP BY","ja":"GROUP BY"},{"id":"o14-3","vi":"HAVING vs WHERE","ja":"HAVING vs WHERE"},{"id":"o14-4","vi":"COUNT và NULL","ja":"COUNT và NULL"}]},{"id":"o15","num":"15","vi":"DDL — tạo và sửa cấu trúc","ja":"DDL — tạo và sửa cấu trúc","subs":[{"id":"o15-1","vi":"CREATE TABLE","ja":"CREATE TABLE"},{"id":"o15-2","vi":"ALTER TABLE","ja":"ALTER TABLE"},{"id":"o15-3","vi":"DROP & TRUNCATE","ja":"DROP & TRUNCATE"},{"id":"o15-4","vi":"COMMENT ON","ja":"COMMENT ON"}]},{"id":"o16","num":"16","vi":"Ràng buộc (constraint)","ja":"Ràng buộc (constraint)","subs":[{"id":"o16-1","vi":"Các loại constraint","ja":"Các loại constraint"},{"id":"o16-2","vi":"Đặt tên & lỗi ORA","ja":"Đặt tên & lỗi ORA"},{"id":"o16-3","vi":"ON DELETE","ja":"ON DELETE"},{"id":"o16-4","vi":"Enable / disable","ja":"Enable / disable"}]},{"id":"o17","num":"17","vi":"DML & transaction","ja":"DML & transaction","subs":[{"id":"o17-1","vi":"INSERT","ja":"INSERT"},{"id":"o17-2","vi":"UPDATE & DELETE","ja":"UPDATE & DELETE"},{"id":"o17-3","vi":"COMMIT / ROLLBACK / SAVEPOINT","ja":"COMMIT / ROLLBACK / SAVEPOINT"},{"id":"o17-4","vi":"Read consistency","ja":"Read consistency"},{"id":"o17-5","vi":"MERGE","ja":"MERGE"}]},{"id":"o18","num":"18","vi":"Sequence & identity","ja":"Sequence & identity","subs":[{"id":"o18-1","vi":"CREATE SEQUENCE","ja":"CREATE SEQUENCE"},{"id":"o18-2","vi":"Dùng trong INSERT","ja":"Dùng trong INSERT"},{"id":"o18-3","vi":"GENERATED AS IDENTITY","ja":"GENERATED AS IDENTITY"},{"id":"o18-4","vi":"CACHE & số nhảy","ja":"CACHE & số nhảy"}]},{"id":"o19","num":"19","vi":"View","ja":"View","subs":[{"id":"o19-1","vi":"View đơn giản","ja":"View đơn giản"},{"id":"o19-2","vi":"View để làm gì","ja":"View để làm gì"},{"id":"o19-3","vi":"View và UPDATE","ja":"View và UPDATE"}]},{"id":"o20","num":"20","vi":"Index","ja":"Index","subs":[{"id":"o20-1","vi":"Index B-tree","ja":"Index B-tree"},{"id":"o20-2","vi":"Index trên PK/UNIQUE","ja":"Index trên PK/UNIQUE"},{"id":"o20-3","vi":"Composite index","ja":"Composite index"},{"id":"o20-4","vi":"EXPLAIN PLAN","ja":"EXPLAIN PLAN"}]},{"id":"o21","num":"21","vi":"Synonym & database link","ja":"Synonym & database link","subs":[{"id":"o21-1","vi":"Private / public synonym","ja":"Private / public synonym"},{"id":"o21-2","vi":"Khi nào dùng synonym","ja":"Khi nào dùng synonym"},{"id":"o21-3","vi":"Database link","ja":"Database link"}]},{"id":"o22","num":"22","vi":"User, role, quyền","ja":"User, role, quyền","subs":[{"id":"o22-1","vi":"System vs object privilege","ja":"System vs object privilege"},{"id":"o22-2","vi":"GRANT / REVOKE","ja":"GRANT / REVOKE"},{"id":"o22-3","vi":"Role","ja":"Role"},{"id":"o22-4","vi":"WITH GRANT OPTION","ja":"WITH GRANT OPTION"},{"id":"o22-5","vi":"Xem quyền","ja":"Xem quyền"}]},{"id":"o23","num":"23","vi":"Từ điển dữ liệu","ja":"Từ điển dữ liệu","subs":[{"id":"o23-1","vi":"USER_ / ALL_ / DBA_","ja":"USER_ / ALL_ / DBA_"},{"id":"o23-2","vi":"View hay dùng","ja":"View hay dùng"}]},{"id":"o24","num":"24","vi":"PL/SQL — block & biến","ja":"PL/SQL — block & biến","subs":[{"id":"o24-1","vi":"Anonymous block","ja":"Anonymous block"},{"id":"o24-2","vi":"%TYPE, %ROWTYPE","ja":"%TYPE, %ROWTYPE"},{"id":"o24-3","vi":"DBMS_OUTPUT","ja":"DBMS_OUTPUT"}]},{"id":"o25","num":"25","vi":"PL/SQL — điều kiện & vòng lặp","ja":"PL/SQL — điều kiện & vòng lặp","subs":[{"id":"o25-1","vi":"IF / CASE","ja":"IF / CASE"},{"id":"o25-2","vi":"LOOP / WHILE / FOR","ja":"LOOP / WHILE / FOR"}]},{"id":"o26","num":"26","vi":"PL/SQL — exception","ja":"PL/SQL — exception","subs":[{"id":"o26-1","vi":"Exception có sẵn","ja":"Exception có sẵn"},{"id":"o26-2","vi":"WHEN OTHERS","ja":"WHEN OTHERS"},{"id":"o26-3","vi":"Exception tự định nghĩa","ja":"Exception tự định nghĩa"}]},{"id":"o27","num":"27","vi":"Cursor, procedure, function","ja":"Cursor, procedure, function","subs":[{"id":"o27-1","vi":"Cursor","ja":"Cursor"},{"id":"o27-2","vi":"Procedure","ja":"Procedure"},{"id":"o27-3","vi":"Function","ja":"Function"},{"id":"o27-4","vi":"Package","ja":"Package"}]},{"id":"o28","num":"28","vi":"Thực hành mini","ja":"Thực hành mini","subs":[{"id":"o28-1","vi":"Thiết kế schema HR rút gọn","ja":"Thiết kế schema HR rút gọn"},{"id":"o28-2","vi":"Tạo bảng & seed","ja":"Tạo bảng & seed"},{"id":"o28-3","vi":"Query và procedure","ja":"Query và procedure"}]},{"id":"o29","num":"29","vi":"Lỗi Oracle hay gặp","ja":"Lỗi Oracle hay gặp","subs":[{"id":"o29-1","vi":"Lỗi SQL thường gặp","ja":"Lỗi SQL thường gặp"},{"id":"o29-2","vi":"Lỗi kết nối","ja":"Lỗi kết nối"}]},{"id":"o30","num":"30","vi":"Oracle trên AWS","ja":"Oracle trên AWS","subs":[{"id":"o30-1","vi":"RDS Oracle vs EC2","ja":"RDS Oracle vs EC2"},{"id":"o30-2","vi":"Giới hạn RDS","ja":"Giới hạn RDS"},{"id":"o30-3","vi":"Không có Aurora Oracle","ja":"Không có Aurora Oracle"},{"id":"o30-4","vi":"Parameter / option group","ja":"Parameter / option group"},{"id":"o30-5","vi":"Multi-AZ, backup, snapshot","ja":"Multi-AZ, backup, snapshot"},{"id":"o30-6","vi":"License","ja":"License"},{"id":"o30-7","vi":"Kết nối từ VPC","ja":"Kết nối từ VPC"},{"id":"o30-8","vi":"Migrate (DMS / SCT)","ja":"Migrate (DMS / SCT)"}]},{"id":"o31","num":"31","vi":"Đối chiếu nhanh với PostgreSQL","ja":"Đối chiếu nhanh với PostgreSQL","subs":[{"id":"o31-1","vi":"Từ khóa & kiểu","ja":"Từ khóa & kiểu"},{"id":"o31-2","vi":"User / schema","ja":"User / schema"}]},{"id":"dx","num":"32","vi":"Bất tương quan Oracle ↔ PostgreSQL","ja":"Bất tương quan Oracle ↔ PostgreSQL","subs":[{"id":"dx-1","vi":"Bốn nhóm lệnh SQL","ja":"Bốn nhóm lệnh SQL"},{"id":"dx-2","vi":"DDL","ja":"DDL"},{"id":"dx-3","vi":"DML","ja":"DML"},{"id":"dx-4","vi":"DCL","ja":"DCL"},{"id":"dx-5","vi":"TCL","ja":"TCL"},{"id":"dx-6","vi":"Kiểu dữ liệu & hàm","ja":"Kiểu dữ liệu & hàm"},{"id":"dx-7","vi":"NULL, chuỗi rỗng, định danh","ja":"NULL, chuỗi rỗng, định danh"},{"id":"dx-8","vi":"PL/SQL vs PL/pgSQL","ja":"PL/SQL vs PL/pgSQL"},{"id":"dx-9","vi":"Checklist migrate","ja":"Checklist migrate"}]},{"id":"o32","num":"33","vi":"Tài liệu tham khảo","ja":"Tài liệu tham khảo","subs":[]}];
+  const tocPg = [{"id":"p1","num":"01","vi":"Giới thiệu database & PostgreSQL","ja":"Giới thiệu database & PostgreSQL","subs":[{"id":"p1-1","vi":"Database, DBMS, RDBMS","ja":"Database, DBMS, RDBMS"},{"id":"p1-2","vi":"PostgreSQL là gì","ja":"PostgreSQL là gì"},{"id":"p1-3","vi":"Khi nào chọn Postgres","ja":"Khi nào chọn Postgres"}]},{"id":"p2","num":"02","vi":"Cài đặt môi trường học","ja":"Cài đặt môi trường học","subs":[{"id":"p2-1","vi":"Cài trên Windows","ja":"Cài trên Windows"},{"id":"p2-2","vi":"psql và pgAdmin","ja":"psql và pgAdmin"},{"id":"p2-3","vi":"Tạo database học tập","ja":"Tạo database học tập"}]},{"id":"p3","num":"03","vi":"Kiến trúc nhìn từ người dùng","ja":"Kiến trúc nhìn từ người dùng","subs":[{"id":"p3-1","vi":"Cluster → database → schema","ja":"Cluster → database → schema"},{"id":"p3-2","vi":"Role khác schema","ja":"Role khác schema"},{"id":"p3-3","vi":"Schema public","ja":"Schema public"},{"id":"p3-4","vi":"search_path","ja":"search_path"}]},{"id":"p4","num":"04","vi":"Kết nối & chuỗi kết nối","ja":"Kết nối & chuỗi kết nối","subs":[{"id":"p4-1","vi":"Host, port, database, user","ja":"Host, port, database, user"},{"id":"p4-2","vi":"Connection URI","ja":"Connection URI"},{"id":"p4-3","vi":"pg_hba.conf","ja":"pg_hba.conf"}]},{"id":"p5","num":"05","vi":"Công cụ: psql và pgAdmin","ja":"Công cụ: psql và pgAdmin","subs":[{"id":"p5-1","vi":"Lệnh gạch chéo psql","ja":"Lệnh gạch chéo psql"},{"id":"p5-2","vi":"Chạy file SQL","ja":"Chạy file SQL"},{"id":"p5-3","vi":"pgAdmin","ja":"pgAdmin"}]},{"id":"p6","num":"06","vi":"SQL — SELECT cơ bản","ja":"SQL — SELECT cơ bản","subs":[{"id":"p6-1","vi":"SELECT & alias","ja":"SELECT & alias"},{"id":"p6-2","vi":"Không có DUAL","ja":"Không có DUAL"},{"id":"p6-3","vi":"DISTINCT & ORDER BY","ja":"DISTINCT & ORDER BY"},{"id":"p6-4","vi":"LIMIT / OFFSET / FETCH","ja":"LIMIT / OFFSET / FETCH"}]},{"id":"p7","num":"07","vi":"Lọc dữ liệu — WHERE","ja":"Lọc dữ liệu — WHERE","subs":[{"id":"p7-1","vi":"Toán tử so sánh","ja":"Toán tử so sánh"},{"id":"p7-2","vi":"LIKE, ILIKE, regex","ja":"LIKE, ILIKE, regex"},{"id":"p7-3","vi":"NULL & IS DISTINCT FROM","ja":"NULL & IS DISTINCT FROM"}]},{"id":"p8","num":"08","vi":"Kiểu dữ liệu PostgreSQL","ja":"Kiểu dữ liệu PostgreSQL","subs":[{"id":"p8-1","vi":"Số","ja":"Số"},{"id":"p8-2","vi":"Ký tự & BOOLEAN","ja":"Ký tự & BOOLEAN"},{"id":"p8-3","vi":"Ngày giờ","ja":"Ngày giờ"},{"id":"p8-4","vi":"UUID, BYTEA","ja":"UUID, BYTEA"},{"id":"p8-5","vi":"CAST và ::","ja":"CAST và ::"}]},{"id":"p9","num":"09","vi":"Hàm chuỗi & số","ja":"Hàm chuỗi & số","subs":[{"id":"p9-1","vi":"Hàm chuỗi","ja":"Hàm chuỗi"},{"id":"p9-2","vi":"CONCAT vs ||","ja":"CONCAT vs ||"},{"id":"p9-3","vi":"Hàm số","ja":"Hàm số"}]},{"id":"p10","num":"10","vi":"Hàm ngày giờ","ja":"Hàm ngày giờ","subs":[{"id":"p10-1","vi":"now() và CURRENT_*","ja":"now() và CURRENT_*"},{"id":"p10-2","vi":"Interval","ja":"Interval"},{"id":"p10-3","vi":"date_trunc & EXTRACT","ja":"date_trunc & EXTRACT"},{"id":"p10-4","vi":"to_char / to_date","ja":"to_char / to_date"}]},{"id":"p11","num":"11","vi":"NULL và biểu thức điều kiện","ja":"NULL và biểu thức điều kiện","subs":[{"id":"p11-1","vi":"NULL trong biểu thức","ja":"NULL trong biểu thức"},{"id":"p11-2","vi":"COALESCE, NULLIF, CASE","ja":"COALESCE, NULLIF, CASE"}]},{"id":"p12","num":"12","vi":"JOIN","ja":"JOIN","subs":[{"id":"p12-1","vi":"INNER / OUTER / FULL","ja":"INNER / OUTER / FULL"},{"id":"p12-2","vi":"USING vs ON","ja":"USING vs ON"},{"id":"p12-3","vi":"NATURAL & CROSS JOIN","ja":"NATURAL & CROSS JOIN"}]},{"id":"p13","num":"13","vi":"Tập hợp, subquery, CTE","ja":"Tập hợp, subquery, CTE","subs":[{"id":"p13-1","vi":"UNION / INTERSECT / EXCEPT","ja":"UNION / INTERSECT / EXCEPT"},{"id":"p13-2","vi":"Subquery","ja":"Subquery"},{"id":"p13-3","vi":"CTE WITH","ja":"CTE WITH"}]},{"id":"p14","num":"14","vi":"Gom nhóm","ja":"Gom nhóm","subs":[{"id":"p14-1","vi":"GROUP BY / HAVING","ja":"GROUP BY / HAVING"},{"id":"p14-2","vi":"FILTER","ja":"FILTER"}]},{"id":"p15","num":"15","vi":"DDL — tạo và sửa cấu trúc","ja":"DDL — tạo và sửa cấu trúc","subs":[{"id":"p15-1","vi":"CREATE / ALTER TABLE","ja":"CREATE / ALTER TABLE"},{"id":"p15-2","vi":"DROP CASCADE","ja":"DROP CASCADE"},{"id":"p15-3","vi":"TRUNCATE vs DELETE","ja":"TRUNCATE vs DELETE"}]},{"id":"p16","num":"16","vi":"Ràng buộc (constraint)","ja":"Ràng buộc (constraint)","subs":[{"id":"p16-1","vi":"Các loại constraint","ja":"Các loại constraint"},{"id":"p16-2","vi":"ON DELETE / ON UPDATE","ja":"ON DELETE / ON UPDATE"}]},{"id":"p17","num":"17","vi":"DML & transaction","ja":"DML & transaction","subs":[{"id":"p17-1","vi":"INSERT … RETURNING","ja":"INSERT … RETURNING"},{"id":"p17-2","vi":"UPDATE / DELETE","ja":"UPDATE / DELETE"},{"id":"p17-3","vi":"BEGIN / COMMIT / ROLLBACK","ja":"BEGIN / COMMIT / ROLLBACK"},{"id":"p17-4","vi":"ON CONFLICT (upsert)","ja":"ON CONFLICT (upsert)"}]},{"id":"p18","num":"18","vi":"Identity, serial, sequence","ja":"Identity, serial, sequence","subs":[{"id":"p18-1","vi":"SERIAL vs IDENTITY","ja":"SERIAL vs IDENTITY"},{"id":"p18-2","vi":"nextval / setval","ja":"nextval / setval"}]},{"id":"p19","num":"19","vi":"View","ja":"View","subs":[{"id":"p19-1","vi":"CREATE VIEW","ja":"CREATE VIEW"},{"id":"p19-2","vi":"Materialized view","ja":"Materialized view"}]},{"id":"p20","num":"20","vi":"Index","ja":"Index","subs":[{"id":"p20-1","vi":"B-tree","ja":"B-tree"},{"id":"p20-2","vi":"EXPLAIN / EXPLAIN ANALYZE","ja":"EXPLAIN / EXPLAIN ANALYZE"}]},{"id":"p21","num":"21","vi":"Schema & search_path","ja":"Schema & search_path","subs":[{"id":"p21-1","vi":"CREATE SCHEMA","ja":"CREATE SCHEMA"},{"id":"p21-2","vi":"USAGE trên schema","ja":"USAGE trên schema"}]},{"id":"p22","num":"22","vi":"Role & quyền","ja":"Role & quyền","subs":[{"id":"p22-1","vi":"Role LOGIN","ja":"Role LOGIN"},{"id":"p22-2","vi":"GRANT / REVOKE","ja":"GRANT / REVOKE"},{"id":"p22-3","vi":"DEFAULT PRIVILEGES","ja":"DEFAULT PRIVILEGES"}]},{"id":"p23","num":"23","vi":"Catalog hệ thống","ja":"Catalog hệ thống","subs":[{"id":"p23-1","vi":"information_schema","ja":"information_schema"},{"id":"p23-2","vi":"pg_catalog","ja":"pg_catalog"}]},{"id":"p24","num":"24","vi":"PL/pgSQL — function","ja":"PL/pgSQL — function","subs":[{"id":"p24-1","vi":"CREATE FUNCTION","ja":"CREATE FUNCTION"},{"id":"p24-2","vi":"Procedure (CALL)","ja":"Procedure (CALL)"}]},{"id":"p25","num":"25","vi":"PL/pgSQL — exception & trigger","ja":"PL/pgSQL — exception & trigger","subs":[{"id":"p25-1","vi":"EXCEPTION WHEN","ja":"EXCEPTION WHEN"},{"id":"p25-2","vi":"Trigger nhập môn","ja":"Trigger nhập môn"}]},{"id":"p26","num":"26","vi":"JSON & JSONB","ja":"JSON & JSONB","subs":[{"id":"p26-1","vi":"JSON vs JSONB","ja":"JSON vs JSONB"},{"id":"p26-2","vi":"Toán tử ->> và lọc","ja":"Toán tử ->> và lọc"},{"id":"p26-3","vi":"GIN index","ja":"GIN index"}]},{"id":"p27","num":"27","vi":"Extension","ja":"Extension","subs":[{"id":"p27-1","vi":"CREATE EXTENSION","ja":"CREATE EXTENSION"},{"id":"p27-2","vi":"uuid & pgcrypto","ja":"uuid & pgcrypto"}]},{"id":"p28","num":"28","vi":"Copy dữ liệu vào/ra","ja":"Copy dữ liệu vào/ra","subs":[{"id":"p28-1","vi":"\\\\copy vs COPY","ja":"\\\\copy vs COPY"},{"id":"p28-2","vi":"CSV","ja":"CSV"}]},{"id":"p29","num":"29","vi":"Thực hành mini","ja":"Thực hành mini","subs":[{"id":"p29-1","vi":"Schema department / employee","ja":"Schema department / employee"},{"id":"p29-2","vi":"Query và function","ja":"Query và function"}]},{"id":"p30","num":"30","vi":"Lỗi Postgres hay gặp","ja":"Lỗi Postgres hay gặp","subs":[{"id":"p30-1","vi":"relation does not exist","ja":"relation does not exist"},{"id":"p30-2","vi":"Permission & constraint","ja":"Permission & constraint"},{"id":"p30-3","vi":"Auth / pg_hba","ja":"Auth / pg_hba"}]},{"id":"p31","num":"31","vi":"PostgreSQL trên AWS","ja":"PostgreSQL trên AWS","subs":[{"id":"p31-1","vi":"RDS vs Aurora vs EC2","ja":"RDS vs Aurora vs EC2"},{"id":"p31-2","vi":"Aurora PostgreSQL","ja":"Aurora PostgreSQL"},{"id":"p31-3","vi":"Multi-AZ, replica, backup","ja":"Multi-AZ, replica, backup"},{"id":"p31-4","vi":"Parameter group & endpoint","ja":"Parameter group & endpoint"},{"id":"p31-5","vi":"Aurora Serverless v2","ja":"Aurora Serverless v2"},{"id":"p31-6","vi":"RDS Proxy","ja":"RDS Proxy"},{"id":"p31-7","vi":"Migrate","ja":"Migrate"}]},{"id":"p32","num":"32","vi":"Đối chiếu nhanh với Oracle","ja":"Đối chiếu nhanh với Oracle","subs":[{"id":"p32-1","vi":"Bảng tương đương","ja":"Bảng tương đương"},{"id":"p32-2","vi":"Aurora chỉ Postgres/MySQL","ja":"Aurora chỉ Postgres/MySQL"}]},{"id":"dx","num":"33","vi":"Bất tương quan Oracle ↔ PostgreSQL","ja":"Bất tương quan Oracle ↔ PostgreSQL","subs":[{"id":"dx-1","vi":"Bốn nhóm lệnh SQL","ja":"Bốn nhóm lệnh SQL"},{"id":"dx-2","vi":"DDL","ja":"DDL"},{"id":"dx-3","vi":"DML","ja":"DML"},{"id":"dx-4","vi":"DCL","ja":"DCL"},{"id":"dx-5","vi":"TCL","ja":"TCL"},{"id":"dx-6","vi":"Kiểu dữ liệu & hàm","ja":"Kiểu dữ liệu & hàm"},{"id":"dx-7","vi":"NULL, chuỗi rỗng, định danh","ja":"NULL, chuỗi rỗng, định danh"},{"id":"dx-8","vi":"PL/SQL vs PL/pgSQL","ja":"PL/SQL vs PL/pgSQL"},{"id":"dx-9","vi":"Checklist migrate","ja":"Checklist migrate"}]},{"id":"p33","num":"34","vi":"Tài liệu tham khảo","ja":"Tài liệu tham khảo","subs":[]}];
+
   // ---------- TOC rendering (supports track switching) ----------
   const tocRoot = document.getElementById('tocRoot');
   let scrollObserver = null;
 
   function renderToc(track) {
-    const data = track === 'react' ? tocReact : track === 'aws' ? tocAws : track === 'aif' ? tocAif : tocJava;
+    const data = track === 'react' ? tocReact
+      : track === 'aws' ? tocAws
+      : track === 'aif' ? tocAif
+      : track === 'oracle' ? tocOracle
+      : track === 'pg' ? tocPg
+      : tocJava;
     tocRoot.innerHTML = '';
     data.forEach(sec => {
       const group = document.createElement('div');
