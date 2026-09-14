@@ -2988,27 +2988,53 @@ npx expo start   # quét QR code bằng app Expo Go để xem trực tiếp trê
       <section class="doc-section" id="a16">
         <div class="section-eyebrow">16</div>
         <h2>Containers on AWS</h2>
-        <div class="svc-card">
+        <p>Container đóng gói app + dependency để chạy giống nhau mọi nơi. Khác VM: nhiều container chia sẻ OS của host, nhẹ hơn hypervisor. Image lưu ở <strong>Docker Hub</strong> (public) hoặc <strong>Amazon ECR</strong> (private/public trên AWS).</p>
+        <div class="svc-card" id="a16-1">
           <div class="svc-name">ECS vs EKS vs Fargate</div>
           <div class="svc-row"><span class="svc-label">Tóm tắt</span><p><strong>ECS</strong>: orchestration container riêng của AWS, đơn giản hơn. <strong>EKS</strong>: Kubernetes managed, dùng khi đã quen/cần Kubernetes hoặc muốn portable đa cloud. Cả hai đều chạy trên <strong>launch type EC2</strong> (tự quản lý server) hoặc <strong>Fargate</strong> (serverless — không cần quản lý server bên dưới, trả tiền theo resource container dùng).</p></div>
           <div class="svc-row"><span class="svc-label">Điểm quan trọng</span>
             <ul class="svc-points">
-              <li><strong>EC2 launch type</strong>: bạn tự quản lý & trả tiền cho EC2 instance làm "host" chạy container — kiểm soát nhiều hơn nhưng phải tự patch/scale host.</li>
-              <li><strong>Fargate</strong>: chỉ khai báo CPU/RAM cho container, AWS tự lo phần server bên dưới — đơn giản nhất nhưng ít tùy biến OS/host hơn.</li>
-              <li>ECS Task cần <strong>IAM Task Role</strong> riêng (khác IAM Role của EC2 host) để container gọi API AWS đúng quyền.</li>
-              <li>EKS tương thích công cụ Kubernetes tiêu chuẩn (kubectl, Helm) — dễ di chuyển sang cloud khác nếu cần.</li>
+              <li><strong>EC2 launch type</strong>: bạn tự quản lý &amp; trả tiền cho EC2 instance làm "host" chạy container — kiểm soát nhiều hơn nhưng phải tự patch/scale host. Instance phải chạy <strong>ECS Agent</strong> để vào cluster.</li>
+              <li><strong>Fargate</strong>: chỉ khai báo CPU/RAM cho task, AWS tự lo phần server bên dưới — scale bằng cách tăng số task, không đụng EC2.</li>
+              <li><strong>Hai IAM role khác nhau</strong>: <em>EC2 Instance Profile</em> (chỉ EC2 launch type) dùng cho ECS Agent — kéo image ECR, ghi CloudWatch Logs, đọc Secrets Manager. <em>ECS Task Role</em> gắn vào task definition — quyền của <em>ứng dụng trong container</em> (S3, DynamoDB…). Một cluster có thể chạy nhiều service, mỗi service một task role riêng.</li>
+              <li>Load balancer: <strong>ALB</strong> phù hợp hầu hết web/HTTP. <strong>NLB</strong> khi cần throughput cực cao hoặc ghép <strong>PrivateLink</strong>. Classic LB không khuyến nghị (không Fargate, thiếu tính năng).</li>
+              <li>Volume bền: mount <strong>EFS</strong> vào task (EC2 và Fargate) để nhiều AZ cùng đọc/ghi. <strong>S3 không mount được như filesystem</strong> vào container.</li>
+              <li>EKS: một cluster <strong>mỗi Region</strong>; node có thể là Managed Node Group, self-managed (EKS Optimized AMI), hoặc Fargate. Volume qua CSI: EBS, EFS (Fargate được), FSx for Lustre / NetApp ONTAP.</li>
             </ul>
           </div>
-          <div class="svc-row"><span class="svc-label">Use case</span><p>Không muốn quản lý EC2 cluster bên dưới, chỉ cần chạy container → Fargate. Hệ thống cần chuẩn Kubernetes để dễ portable → EKS.</p></div>
-          <div class="svc-row kw"><span class="svc-label">Keyword trong đề</span><p><span class="kw-chip">no server management</span><span class="kw-chip">Kubernetes</span><span class="kw-chip">container orchestration</span><span class="kw-chip">serverless containers</span></p></div>
+          <div class="svc-row"><span class="svc-label">Use case</span><p>Không muốn quản lý EC2 cluster bên dưới, chỉ cần chạy container → Fargate. Hệ thống cần chuẩn Kubernetes để dễ portable → EKS. Cần persistent shared storage cho container → Fargate + EFS.</p></div>
+          <div class="svc-row kw"><span class="svc-label">Keyword trong đề</span><p><span class="kw-chip">no server management</span><span class="kw-chip">Kubernetes</span><span class="kw-chip">IAM task role</span><span class="kw-chip">shared storage EFS</span><span class="kw-chip">serverless containers</span></p></div>
         </div>
+
+        <div class="svc-card" id="a16-2">
+          <div class="svc-name">ECS Auto Scaling &amp; Capacity Provider</div>
+          <div class="svc-row"><span class="svc-label">Tóm tắt</span><p>Có <em>hai tầng scale</em> dễ bị đề thi trộn: scale <strong>số task</strong> (ECS Service Auto Scaling) và scale <strong>số EC2 host</strong> (ASG / Capacity Provider). Fargate chỉ cần tầng task.</p></div>
+          <div class="svc-row"><span class="svc-label">Điểm quan trọng</span>
+            <ul class="svc-points">
+              <li>Service Auto Scaling (Application Auto Scaling) theo CPU/RAM trung bình của service hoặc <strong>ALB Request Count Per Target</strong> — Target Tracking, Step Scaling, hoặc Scheduled.</li>
+              <li>EC2 launch type: khi thêm task mà host hết CPU/RAM, cần thêm instance. <strong>Capacity Provider</strong> gắn ASG, tự provision host khi thiếu capacity.</li>
+              <li>Task có thể được EventBridge (event hoặc schedule) / SQS (poll) kích hoạt — pattern batch/event-driven không cần service chạy 24/7.</li>
+            </ul>
+          </div>
+          <div class="svc-row"><span class="svc-label">Use case</span><p>Queue SQS phình to → tăng số ECS task. Cluster EC2 hết chỗ đặt task → Capacity Provider thêm instance.</p></div>
+        </div>
+
+        <div class="svc-card" id="a16-3">
+          <div class="svc-name">AWS App Runner</div>
+          <div class="svc-row"><span class="svc-label">Tóm tắt</span><p>Deploy web app/API từ <strong>source code hoặc container image</strong> — AWS tự build, load balancer, scale, HTTPS. Ít tùy biến hơn ECS/EKS nhưng nhanh hơn khi team không muốn quản lý cluster.</p></div>
+          <div class="svc-row"><span class="svc-label">Use case</span><p>Cần đưa API/container ra production nhanh, có VPC access tới RDS/ElastiCache, không muốn viết task definition/Helm.</p></div>
+          <div class="svc-row kw"><span class="svc-label">Keyword trong đề</span><p><span class="kw-chip">deploy from source code</span><span class="kw-chip">no infrastructure experience</span><span class="kw-chip">web apps and APIs</span></p></div>
+        </div>
+
         <div class="svc-mini-list">
-          <div class="mini-row"><strong>Amazon ECR</strong> — private registry lưu Docker image, tích hợp sẵn với ECS/EKS.</div>
+          <div class="mini-row"><strong>Amazon ECR</strong> — registry Docker trên AWS (private + public gallery), lưu trên S3, quyền qua IAM; hỗ trợ scan lỗ hổng, tag, lifecycle policy. Lỗi pull image thường do IAM.</div>
+          <div class="mini-row"><strong>AWS App2Container (A2C)</strong> — CLI lift-and-shift app Java/.NET on-prem thành Docker, đẩy ECR, deploy ECS/EKS/App Runner kèm template CloudFormation.</div>
         </div>
         <div class="refs">
           <div class="label lang-vi">Nguồn tham khảo</div>
           <a href="https://docs.aws.amazon.com/ecs/latest/developerguide/Welcome.html" target="_blank">Amazon ECS — Developer Guide</a>
           <a href="https://docs.aws.amazon.com/eks/latest/userguide/what-is-eks.html" target="_blank">Amazon EKS — User Guide</a>
+          <a href="https://docs.aws.amazon.com/apprunner/latest/dg/what-is-apprunner.html" target="_blank">AWS App Runner — Developer Guide</a>
         </div>
       </section>
 
@@ -3016,19 +3042,38 @@ npx expo start   # quét QR code bằng app Expo Go để xem trực tiếp trê
       <section class="doc-section" id="a17">
         <div class="section-eyebrow">17</div>
         <h2>Serverless Overview</h2>
-        <div class="svc-card">
-          <div class="svc-name">AWS Lambda & Amazon API Gateway</div>
+        <p>Serverless không có nghĩa là không có server — nghĩa là <strong>bạn không quản lý/provision</strong> chúng. Ngoài Lambda (FaaS) còn gồm DynamoDB, API Gateway, S3, SQS/SNS, Fargate, Aurora Serverless, Step Functions, Cognito…</p>
+        <div class="svc-card" id="a17-1">
+          <div class="svc-name">AWS Lambda &amp; Amazon API Gateway</div>
           <div class="svc-row"><span class="svc-label">Tóm tắt</span><p><strong>Lambda</strong>: chạy code theo sự kiện (event-driven), không quản lý server, tự scale, trả tiền theo số lần gọi + thời gian chạy, giới hạn timeout tối đa 15 phút. <strong>API Gateway</strong>: tạo REST/WebSocket/HTTP API, thường đứng trước Lambda làm cổng vào public, hỗ trợ throttling, caching, auth (Cognito/IAM/Lambda authorizer).</p></div>
           <div class="svc-row"><span class="svc-label">Điểm quan trọng</span>
             <ul class="svc-points">
-              <li>Lambda hỗ trợ tối đa <strong>10GB RAM</strong>, CPU tăng tỉ lệ theo RAM được cấp — không cấu hình CPU riêng.</li>
-              <li><strong>Cold start</strong>: lần gọi đầu tiên (hoặc sau thời gian rảnh) chậm hơn do phải khởi tạo môi trường — dùng <strong>Provisioned Concurrency</strong> để giữ sẵn instance "ấm".</li>
-              <li>Lambda tự scale ngang bằng cách chạy nhiều bản instance song song, mỗi request 1 instance riêng — không có khái niệm "1 Lambda xử lý nhiều request cùng lúc".</li>
-              <li>API Gateway hỗ trợ <strong>usage plan + API key</strong> để giới hạn số request/giây cho từng khách hàng riêng biệt.</li>
+              <li>Lambda hỗ trợ tối đa <strong>10GB RAM</strong> (từ 128MB); CPU và network tăng tỉ lệ theo RAM. <code class="inline">/tmp</code> tới 10GB. Package zip nén 50MB / giải nén 250MB. Env vars tối đa 4KB.</li>
+              <li><strong>Cold start</strong>: lần gọi đầu (hoặc sau khi idle) chậm vì init. <strong>Provisioned Concurrency</strong> giữ sẵn instance ấm. <strong>SnapStart</strong> (Java/Python/.NET) chụp snapshot sau init để giảm cold start, không tính thêm phí.</li>
+              <li>Concurrency mặc định <strong>1000/region</strong> (xin tăng được). <strong>Reserved concurrency</strong> = trần của 1 function (vừa bảo vệ function khác, vừa tự giới hạn). Vượt trần: sync trả <strong>429 Throttle</strong>; async thì retry (tới ~6 giờ) rồi DLQ.</li>
+              <li>Image Docker trên Lambda phải implement Lambda Runtime API — container tùy ý chạy trên ECS/Fargate thì phù hợp hơn.</li>
+              <li>Mặc định Lambda nằm <strong>ngoài VPC của bạn</strong> → không gọi được RDS/ElastiCache/internal ALB. Muốn vào VPC: gắn subnet + SG, AWS tạo ENI. RDS Proxy không public — Lambda phải ở VPC mới dùng được.</li>
+              <li>API Gateway có 3 kiểu endpoint: <strong>Edge-optimized</strong> (client toàn cầu, qua CloudFront; API vẫn sống 1 region), <strong>Regional</strong>, <strong>Private</strong> (chỉ VPC qua Interface Endpoint + resource policy). Có thể tích hợp Lambda, HTTP backend, hoặc AWS Service (vd đẩy thẳng Kinesis/SQS, start Step Functions).</li>
             </ul>
           </div>
-          <div class="svc-row"><span class="svc-label">Use case</span><p>Xử lý tác vụ ngắn, tần suất không đều (resize ảnh khi upload, xử lý webhook) → Lambda. Cần expose Lambda thành REST API public có rate-limit → API Gateway + Lambda.</p></div>
-          <div class="svc-row kw"><span class="svc-label">Keyword trong đề</span><p><span class="kw-chip">event-driven</span><span class="kw-chip">no server management</span><span class="kw-chip">pay per execution</span><span class="kw-chip">short-lived tasks</span></p></div>
+          <div class="svc-row"><span class="svc-label">Use case</span><p>Tác vụ ngắn, tần suất không đều → Lambda. Expose REST có rate-limit/API key → API Gateway + Lambda. RDS bị cạn connection vì Lambda → RDS Proxy (Lambda trong VPC).</p></div>
+          <div class="svc-row kw"><span class="svc-label">Keyword trong đề</span><p><span class="kw-chip">event-driven</span><span class="kw-chip">15 minutes</span><span class="kw-chip">throttling 429</span><span class="kw-chip">Lambda in VPC</span><span class="kw-chip">edge-optimized API</span></p></div>
+        </div>
+
+        <div class="svc-card" id="a17-2">
+          <div class="svc-name">CloudFront Functions vs Lambda@Edge</div>
+          <div class="svc-row"><span class="svc-label">Tóm tắt</span><p>Hai cách chạy code <strong>tại edge</strong> gắn vào CloudFront — không quản lý server, trả theo request. Dùng để tùy biến CDN (header, URL, auth, A/B test) gần user.</p></div>
+          <div class="svc-row"><span class="svc-label">Điểm quan trọng</span>
+            <ul class="svc-points">
+              <li><strong>CloudFront Functions</strong>: JavaScript nhẹ, sub-ms, hàng triệu req/s, chỉ Viewer Request/Response — rewrite URL, sửa header, chuẩn hóa cache key, JWT đơn giản. Không network/filesystem, không đọc body.</li>
+              <li><strong>Lambda@Edge</strong>: Node.js/Python, hàng nghìn req/s, chạy được cả Origin Request/Response, thời gian dài hơn, gọi AWS SDK/service ngoài, đọc body. Viết ở <code class="inline">us-east-1</code>, CloudFront nhân bản ra edge.</li>
+            </ul>
+          </div>
+          <div class="svc-row"><span class="svc-label">Use case</span><p>Redirect/header cực nhanh, traffic rất lớn → CloudFront Functions. Cần gọi DynamoDB/S3 hoặc xử lý body tại edge → Lambda@Edge.</p></div>
+          <div class="svc-row kw"><span class="svc-label">Keyword trong đề</span><p><span class="kw-chip">customize CDN at the edge</span><span class="kw-chip">viewer request</span><span class="kw-chip">origin request</span><span class="kw-chip">URL rewrite</span></p></div>
+        </div>
+        <div class="svc-mini-list">
+          <div class="mini-row"><strong>RDS/Aurora → Lambda</strong> — PostgreSQL/Aurora MySQL có thể invoke Lambda từ trong DB (INSERT → gửi SES). RDS Event Notifications thì chỉ nói về instance (start/stop/snapshot), không phải dữ liệu hàng — khác Streams.</div>
         </div>
         <div class="refs">
           <div class="label lang-vi">Nguồn tham khảo</div>
@@ -3071,9 +3116,12 @@ npx expo start   # quét QR code bằng app Expo Go để xem trực tiếp trê
         </div>
 
         <div class="svc-mini-list">
-          <div class="mini-row"><strong>S3 + Lambda</strong> — trigger Lambda tự động khi có object mới upload vào S3 (vd resize ảnh, quét virus).</div>
-          <div class="mini-row"><strong>Step Functions điều phối nhiều Lambda</strong> — thay vì 1 Lambda khổng lồ, chia nhỏ thành nhiều Lambda và dùng Step Functions quản lý luồng, retry, error handling.</div>
+          <div class="mini-row"><strong>S3 + Lambda</strong> — trigger Lambda tự động khi có object mới upload vào S3 (vd resize ảnh, quét virus). Có thể chèn SQS/SNS ở giữa để buffer.</div>
+          <div class="mini-row"><strong>Step Functions điều phối nhiều Lambda</strong> — thay vì 1 Lambda khổng lồ, chia nhỏ thành nhiều Lambda và dùng Step Functions quản lý luồng, retry, timeout, human approval.</div>
           <div class="mini-row"><strong>EventBridge + Lambda</strong> — kiến trúc event-driven, Lambda phản ứng với sự kiện từ nhiều nguồn AWS/SaaS khác nhau mà không polling.</div>
+          <div class="mini-row"><strong>Cognito + quyền tạm thời lên S3</strong> — User Pools đăng nhập; Identity Pools đổi token lấy STS credential để app gọi thẳng S3/DynamoDB theo IAM policy (kể cả guest). Không nhầm với IAM user console.</div>
+          <div class="mini-row"><strong>Hai lớp cache đọc</strong> — DAX trước DynamoDB (microsecond, API không đổi) + cache response trên API Gateway (giảm invoke Lambda). Đọc nhiều, ghi ít thì đề hay hỏi pattern này.</div>
+          <div class="mini-row"><strong>Welcome email / thumbnail</strong> — DynamoDB Streams → Lambda → SES; S3 event → Lambda (hoặc SQS) sinh thumbnail. SES = gửi email serverless.</div>
         </div>
         <div class="refs">
           <div class="label lang-vi">Nguồn tham khảo</div>
@@ -3090,20 +3138,23 @@ npx expo start   # quét QR code bằng app Expo Go để xem trực tiếp trê
           <div class="svc-row"><span class="svc-label">Tóm tắt</span><p>NoSQL key-value/document, serverless, độ trễ single-digit millisecond ở bất kỳ scale nào. Hỗ trợ <strong>On-Demand</strong> (trả theo request) hoặc <strong>Provisioned</strong> capacity, <strong>DAX</strong> (cache riêng cho DynamoDB, giảm độ trễ xuống microsecond), <strong>Global Tables</strong> (multi-Region active-active).</p></div>
           <div class="svc-row"><span class="svc-label">Điểm quan trọng</span>
             <ul class="svc-points">
-              <li>Bảng gồm <strong>Partition Key</strong> (bắt buộc, quyết định phân vùng lưu trữ) và tùy chọn thêm <strong>Sort Key</strong> — 2 khóa này quyết định hiệu năng truy vấn.</li>
-              <li><strong>DynamoDB Streams</strong>: ghi lại mọi thay đổi dữ liệu theo thời gian thực, trigger được Lambda — dùng cho pattern event-driven.</li>
-              <li><strong>TTL (Time To Live)</strong>: tự động xóa item hết hạn mà không tốn write capacity — hữu ích cho session/cache data.</li>
-              <li><strong>Global Tables</strong> đồng bộ 2 chiều giữa nhiều Region gần như real-time, phù hợp ứng dụng multi-Region active-active.</li>
+              <li>Bảng gồm <strong>Partition Key</strong> (bắt buộc, quyết định phân vùng lưu trữ) và tùy chọn thêm <strong>Sort Key</strong> — 2 khóa này quyết định hiệu năng truy vấn. Schema linh hoạt: thêm attribute theo thời gian. Item tối đa <strong>400KB</strong>.</li>
+              <li><strong>Provisioned</strong> (mặc định): tự khai báo RCU/WCU, có auto-scaling — rẻ khi tải ổn định. <strong>On-Demand</strong>: không capacity planning, đắt hơn, hợp spike đột ngột. Table class: Standard hoặc Infrequent Access.</li>
+              <li><strong>DynamoDB Streams</strong>: 24 giờ, số consumer hạn chế, hay gắn Lambda. Muốn giữ lâu / nhiều consumer → đẩy sang <strong>Kinesis Data Streams</strong> (tới 1 năm). Streams là điều kiện tiên quyết của Global Tables.</li>
+              <li><strong>TTL</strong>: tự xóa item hết hạn, không tốn WCU — session/cache. <strong>PITR</strong>: restore bất kỳ điểm trong 35 ngày (tạo bảng mới). Export/import S3 không tốn RCU/WCU.</li>
+              <li><strong>DAX</strong> cache object/query của DynamoDB, API không đổi. <strong>ElastiCache</strong> khi cần cache kết quả gom nhóm/aggregation do app tự tính — không thay thế nhau 100%.</li>
+              <li><strong>Global Tables</strong> đồng bộ 2 chiều nhiều Region (active-active), độ trễ thấp gần user.</li>
             </ul>
           </div>
           <div class="svc-row"><span class="svc-label">Use case</span><p>Cần DB scale hàng triệu request/giây, độ trễ ổn định, không cần join phức tạp → DynamoDB. Cần đọc siêu nhanh, giảm tải DynamoDB → thêm DAX.</p></div>
           <div class="svc-row kw"><span class="svc-label">Keyword trong đề</span><p><span class="kw-chip">single-digit millisecond latency</span><span class="kw-chip">key-value</span><span class="kw-chip">serverless NoSQL</span><span class="kw-chip">microsecond latency caching</span></p></div>
         </div>
         <div class="svc-mini-list">
-          <div class="mini-row"><strong>Amazon DocumentDB</strong> — tương thích MongoDB, dùng khi hệ thống sẵn có dùng MongoDB API.</div>
-          <div class="mini-row"><strong>Amazon Neptune</strong> — graph database, phù hợp bài toán quan hệ phức tạp (mạng xã hội, gợi ý sản phẩm, fraud detection).</div>
+          <div class="mini-row"><strong>Chọn loại DB</strong> — OLTP/join → RDS/Aurora. Key-value/document serverless → DynamoDB. Cache in-memory → ElastiCache. MongoDB API → DocumentDB (HA 3 AZ, storage +10GB). Graph/quan hệ phức tạp → Neptune. Cassandra → Keyspaces. Ledger bất biến → <strong>QLDB</strong>. Time series/IoT → <strong>Timestream</strong> (tier nóng/lạnh tự động).</div>
+          <div class="mini-row"><strong>Amazon DocumentDB</strong> — tương thích MongoDB, dùng khi hệ thống sẵn có MongoDB API.</div>
+          <div class="mini-row"><strong>Amazon Neptune</strong> — graph database (mạng xã hội, gợi ý, fraud). Neptune Streams: thay đổi theo thứ tự, sync sang S3/OpenSearch/ElastiCache hoặc region khác.</div>
           <div class="mini-row"><strong>Amazon Keyspaces</strong> — tương thích Apache Cassandra (wide-column), serverless.</div>
-          <div class="mini-row"><strong>AWS Database Migration Service (DMS)</strong> — di chuyển database vào AWS gần như zero-downtime; kết hợp <strong>Schema Conversion Tool (SCT)</strong> khi cần đổi engine (vd Oracle → Aurora PostgreSQL).</div>
+          <div class="mini-row"><strong>AWS Database Migration Service (DMS)</strong> — di chuyển DB gần như zero-downtime (CDC); replication chạy trên EC2 instance do DMS quản lý, có Multi-AZ. Cùng engine thì không cần SCT; đổi engine (Oracle → Aurora PostgreSQL) thì thêm <strong>Schema Conversion Tool</strong>.</div>
         </div>
         <div class="refs">
           <div class="label lang-vi">Nguồn tham khảo</div>
@@ -3120,9 +3171,10 @@ npx expo start   # quét QR code bằng app Expo Go để xem trực tiếp trê
           <div class="svc-row"><span class="svc-label">Tóm tắt</span><p><strong>Kinesis Data Streams</strong>: thu thập dữ liệu streaming thời gian thực (clickstream, IoT). <strong>Glue</strong>: ETL serverless (transform + catalog, vd .csv → .parquet). <strong>Athena</strong>: query trực tiếp dữ liệu trong S3 bằng SQL, serverless, trả tiền theo dữ liệu quét. <strong>EMR</strong>: cluster Hadoop/Spark quản lý sẵn cho big data. <strong>Redshift</strong>: data warehouse cho phân tích OLAP quy mô lớn (khác RDS — tối ưu cho query phân tích trên hàng tỷ dòng, không phải OLTP).</p></div>
           <div class="svc-row"><span class="svc-label">Điểm quan trọng</span>
             <ul class="svc-points">
-              <li>Athena tính phí theo <strong>số byte dữ liệu quét</strong> — nén dữ liệu (Parquet) và partition đúng cách giúp giảm chi phí đáng kể.</li>
-              <li>Kinesis Data Streams cần chỉ định số <strong>shard</strong> (mỗi shard ~1MB/s ghi, 2MB/s đọc); <strong>Kinesis Data Firehose</strong> thì serverless, tự động ghi thẳng dữ liệu vào S3/Redshift/OpenSearch không cần quản lý shard.</li>
-              <li>Redshift dùng kiến trúc <strong>columnar storage + MPP (Massively Parallel Processing)</strong> — nhanh hơn RDS rất nhiều cho query quét hàng tỷ dòng, nhưng không phù hợp giao dịch OLTP tần suất cao.</li>
+              <li>Athena tính phí theo <strong>số byte dữ liệu quét</strong> (~$5/TB) — dùng <strong>Parquet/ORC</strong>, nén, partition theo cột ảo (year=/month=), file &gt; 128MB để giảm chi phí. Glue hay dùng để convert sang cột. <strong>Federated Query</strong>: SQL xuyên DynamoDB/RDS/CloudWatch Logs qua connector Lambda.</li>
+              <li>Kinesis Data Streams: shard (~1MB/s ghi, 2MB/s đọc), replay được, dữ liệu hết hạn sau X ngày. <strong>Firehose</strong> serverless, gần real-time (khoảng phút) đổ S3/Redshift/OpenSearch, Lambda transform được; không cần quản lý shard.</li>
+              <li>Redshift: <strong>columnar + MPP</strong>, OLAP/PB, provisioned hoặc serverless. Nhanh hơn Athena khi join/aggregate nhiều nhờ cluster có index; Athena = serverless SQL trực tiếp trên S3.</li>
+              <li><strong>MSK</strong> khi team đã dùng Kafka (topic/partition, message lớn hơn mặc định). Kinesis: 1MB/msg, split/merge shard. MSK Serverless nếu không muốn quản lý broker.</li>
             </ul>
           </div>
           <div class="svc-diagram">
@@ -3149,9 +3201,10 @@ npx expo start   # quét QR code bằng app Expo Go để xem trực tiếp trê
         </div>
         <div class="svc-mini-list">
           <div class="mini-row"><strong>AWS Lake Formation</strong> — dựng data lake trên S3 nhanh hơn, quản lý quyền truy cập tập trung theo cột/hàng.</div>
-          <div class="mini-row"><strong>Amazon MSK</strong> — Kafka được quản lý sẵn, dùng khi hệ thống đã dùng Kafka hoặc cần streaming phức tạp hơn Kinesis.</div>
-          <div class="mini-row"><strong>Amazon OpenSearch Service</strong> — tìm kiếm & phân tích log full-text, thường nhận dữ liệu từ Kinesis Data Firehose.</div>
-          <div class="mini-row"><strong>Amazon QuickSight</strong> — dashboard BI trực quan hóa dữ liệu, tích hợp trực tiếp Athena/Redshift/RDS.</div>
+          <div class="mini-row"><strong>Amazon MSK</strong> — Kafka được quản lý sẵn (kèm MSK Serverless); chọn khi đã dùng Kafka hoặc cần streaming phức tạp hơn Kinesis.</div>
+          <div class="mini-row"><strong>Amazon Managed Service for Apache Flink</strong> — xử lý stream Flink managed; không đọc trực tiếp từ Firehose (thường từ Kinesis Data Streams / MSK).</div>
+          <div class="mini-row"><strong>Amazon OpenSearch Service</strong> — tìm kiếm &amp; phân tích log full-text, thường nhận dữ liệu từ Firehose.</div>
+          <div class="mini-row"><strong>Amazon QuickSight</strong> — dashboard BI, gắn Athena/Redshift/RDS. Pipeline điển hình: IoT Core/Kinesis → Firehose → S3 → Glue → Athena/Redshift → QuickSight.</div>
         </div>
         <div class="refs">
           <div class="label lang-vi">Nguồn tham khảo</div>
@@ -3167,11 +3220,13 @@ npx expo start   # quét QR code bằng app Expo Go để xem trực tiếp trê
         <p>Domain có tỷ trọng thấp trong đề SAA-C03 — chỉ cần biết <em>service nào giải quyết bài toán gì</em>, không cần hiểu sâu thuật toán.</p>
         <div class="svc-mini-list">
           <div class="mini-row"><strong>Amazon SageMaker AI</strong> — nền tảng xây dựng/huấn luyện/triển khai model ML tùy chỉnh end-to-end.</div>
-          <div class="mini-row"><strong>Amazon Rekognition</strong> — nhận diện hình ảnh/video (object, khuôn mặt, nội dung không phù hợp).</div>
-          <div class="mini-row"><strong>Amazon Comprehend</strong> — phân tích ngôn ngữ tự nhiên (sentiment, entity, ngôn ngữ đang dùng) từ văn bản.</div>
-          <div class="mini-row"><strong>Amazon Textract</strong> — trích xuất text/dữ liệu có cấu trúc từ ảnh scan/tài liệu (OCR nâng cao).</div>
-          <div class="mini-row"><strong>Amazon Transcribe / Polly / Translate</strong> — Transcribe: speech-to-text; Polly: text-to-speech; Translate: dịch ngôn ngữ tự động.</div>
-          <div class="mini-row"><strong>Amazon Lex</strong> — xây dựng chatbot/voice bot (engine đứng sau Alexa).</div>
+          <div class="mini-row"><strong>Amazon Rekognition</strong> — nhận diện hình ảnh/video (object, khuôn mặt, nội dung không phù hợp). Có thể đẩy sang A2I để người review khi dưới ngưỡng tin cậy.</div>
+          <div class="mini-row"><strong>Amazon Comprehend</strong> — NLP: sentiment, entity, ngôn ngữ, gom topic. <strong>Comprehend Medical</strong> cho ghi chú lâm sàng / PHI.</div>
+          <div class="mini-row"><strong>Amazon Textract</strong> — trích xuất text/bảng/form từ scan (hóa đơn, hộ chiếu, claim) — OCR có cấu trúc, không phải Rekognition.</div>
+          <div class="mini-row"><strong>Amazon Transcribe / Polly / Translate</strong> — Transcribe: speech-to-text (có redaction PII); Polly: text-to-speech (lexicon/SSML); Translate: dịch hàng loạt / localize.</div>
+          <div class="mini-row"><strong>Amazon Lex + Amazon Connect</strong> — Lex: chatbot/voice bot (engine Alexa). Connect: contact center cloud (nhận cuộc gọi, luồng IVR), thường gắn Lex + Lambda + CRM.</div>
+          <div class="mini-row"><strong>Amazon Kendra</strong> — search ngôn ngữ tự nhiên trên tài liệu nội bộ (S3, SharePoint, FAQ) — “hỏi đáp từ document”, khác OpenSearch (tự quản lý index).</div>
+          <div class="mini-row"><strong>Amazon Personalize</strong> — gợi ý sản phẩm realtime (cùng họ công nghệ Amazon.com), không cần tự train model.</div>
         </div>
         <div class="callout"><strong>Mẹo làm bài:</strong> đề thường mô tả 1 bài toán cụ thể (vd "trích xuất text từ hóa đơn scan") và hỏi chọn service nào — chỉ cần khớp đúng tên bài toán với đúng service ở trên, không cần biết cách cấu hình chi tiết.</div>
         <div class="refs">
@@ -3190,9 +3245,9 @@ npx expo start   # quét QR code bằng app Expo Go để xem trực tiếp trê
           <div class="svc-row"><span class="svc-label">Điểm quan trọng</span>
             <ul class="svc-points">
               <li>CloudTrail bật <strong>mặc định</strong> cho mọi account, lưu 90 ngày miễn phí trong "Event history" — cần tạo Trail riêng để lưu lâu dài vào S3.</li>
-              <li>CloudWatch Alarm có 3 trạng thái: <code class="inline">OK</code>, <code class="inline">ALARM</code>, <code class="inline">INSUFFICIENT_DATA</code> — có thể trigger Auto Scaling, SNS, hoặc Lambda.</li>
-              <li>AWS Config có thể <strong>tự động khắc phục (remediation)</strong> resource không tuân thủ bằng cách gọi SSM Automation Document.</li>
-              <li>CloudWatch Logs Insights cho phép query log bằng cú pháp giống SQL, không cần công cụ ngoài.</li>
+              <li>CloudWatch Alarm có 3 trạng thái: <code class="inline">OK</code>, <code class="inline">ALARM</code>, <code class="inline">INSUFFICIENT_DATA</code> — có thể trigger Auto Scaling, SNS, hoặc Lambda. Metric custom (vd RAM) phải tự đẩy; metric AWS sẵn có không gồm RAM EC2.</li>
+              <li>AWS Config có thể <strong>tự động khắc phục (remediation)</strong> resource không tuân thủ bằng SSM Automation Document.</li>
+              <li>CloudWatch Logs Insights query log (không realtime). Export S3 có thể trễ <strong>tới 12 giờ</strong> — cần realtime thì dùng <strong>Logs Subscriptions</strong> (Kinesis/Firehose/Lambda). Container Insights / Lambda Insights gom metric+log container/function.</li>
             </ul>
           </div>
           <div class="svc-row"><span class="svc-label">Use case</span><p>Cần biết ai đã xóa 1 security group quan trọng → CloudTrail. Cần cảnh báo khi CPU EC2 vượt 80% → CloudWatch Alarm. Cần đảm bảo mọi S3 bucket luôn bật encryption → AWS Config rule.</p></div>
@@ -3201,7 +3256,8 @@ npx expo start   # quét QR code bằng app Expo Go để xem trực tiếp trê
         <div class="svc-mini-list">
           <div class="mini-row"><strong>AWS X-Ray</strong> — trace request xuyên suốt nhiều service để debug hiệu năng/lỗi trong kiến trúc microservices.</div>
           <div class="mini-row"><strong>AWS Trusted Advisor</strong> — kiểm tra tổng quát theo best practice: cost, security, performance, fault tolerance, service limits.</div>
-          <div class="mini-row"><strong>Amazon Managed Grafana / Prometheus</strong> — visualize & giám sát metric theo chuẩn Grafana/Prometheus quen thuộc, quản lý sẵn.</div>
+          <div class="mini-row"><strong>Amazon Managed Grafana / Prometheus</strong> — visualize &amp; giám sát metric theo chuẩn Grafana/Prometheus quen thuộc, quản lý sẵn.</div>
+          <div class="mini-row"><strong>EventBridge</strong> — cron hoặc event pattern; archive/replay; bus cross-account bằng resource-based policy. CloudTrail API (vd DeleteTable) có thể rule → SNS.</div>
         </div>
         <div class="refs">
           <div class="label lang-vi">Nguồn tham khảo</div>
@@ -3221,6 +3277,8 @@ npx expo start   # quét QR code bằng app Expo Go để xem trực tiếp trê
             <ul class="svc-points">
               <li>SCP áp dụng cho <strong>mọi user/role trong account</strong> kể cả root user của account con — chỉ management account của Organization mới miễn nhiễm SCP.</li>
               <li>Quyền hiệu lực thực tế = <strong>giao (intersection)</strong> giữa SCP (giới hạn trần) và IAM Policy (cấp cụ thể) — thiếu 1 trong 2 thì không có quyền.</li>
+              <li><strong>Permission Boundary</strong> cũng là trần quyền, nhưng gắn <em>từng user/role</em> (không phải group). Dùng khi cho dev tự tạo IAM user/gắn policy mà không escalate thành admin — khác SCP (cả account).</li>
+              <li>Identity Center: <strong>Permission Set</strong> = tập IAM policy gán cho user/group trên nhiều account. Identity store nội bộ hoặc federate AD/Okta. SSO cả app SAML (Salesforce, M365).</li>
               <li>Organizations còn cho phép <strong>consolidated billing</strong> — gộp hóa đơn nhiều account, hưởng chiết khấu theo khối lượng dùng chung (volume discount).</li>
               <li>Control Tower dựng sẵn: Organization, OU mẫu (Security/Sandbox), SCP guardrail, và Account Factory để tạo account mới nhanh, đúng chuẩn.</li>
             </ul>
@@ -3229,7 +3287,7 @@ npx expo start   # quét QR code bằng app Expo Go để xem trực tiếp trê
           <div class="svc-row kw"><span class="svc-label">Keyword trong đề</span><p><span class="kw-chip">multiple AWS accounts</span><span class="kw-chip">centralized access</span><span class="kw-chip">guardrail</span><span class="kw-chip">prevent from disabling</span><span class="kw-chip">management account</span></p></div>
         </div>
         <div class="svc-mini-list">
-          <div class="mini-row"><strong>Amazon Cognito</strong> — quản lý đăng nhập/định danh cho ứng dụng web/mobile (User Pools) và cấp quyền truy cập tạm thời AWS resource (Identity Pools) — khác IAM (dành cho user AWS console/API, không dành cho end-user ứng dụng).</div>
+          <div class="mini-row"><strong>Amazon Cognito</strong> — User Pools: đăng nhập app (MFA, federate Google/SAML), gắn API Gateway/ALB. Identity Pools: đổi token lấy STS để gọi thẳng S3/DynamoDB (kể cả guest + IAM theo user_id). Keyword đề: “hundreds of mobile users”, “SAML”. Khác IAM (console/API nhân sự).</div>
           <div class="mini-row"><strong>AWS Directory Service</strong> — tích hợp/host Microsoft Active Directory trên AWS, dùng khi cần federate với AD on-premise.</div>
           <div class="mini-row"><strong>AWS RAM (Resource Access Manager)</strong> — chia sẻ tài nguyên (subnet, Transit Gateway...) giữa nhiều account mà không cần duplicate.</div>
         </div>
@@ -3250,9 +3308,11 @@ npx expo start   # quét QR code bằng app Expo Go để xem trực tiếp trê
           <div class="svc-row"><span class="svc-label">Tóm tắt</span><p><strong>KMS</strong>: tạo & quản lý key mã hóa (CMK) cho dữ liệu <em>at-rest</em> (S3, EBS, RDS...), hỗ trợ envelope encryption, tự động xoay key. <strong>ACM</strong>: cấp/quản lý chứng chỉ SSL/TLS miễn phí cho mã hóa <em>in-transit</em>, tích hợp CloudFront/ALB/API Gateway. <strong>Secrets Manager</strong>: lưu bí mật kèm <em>tự động rotation</em> (vd mật khẩu RDS).</p></div>
           <div class="svc-row"><span class="svc-label">Điểm quan trọng</span>
             <ul class="svc-points">
-              <li>KMS có 3 loại key: <strong>AWS managed</strong> (AWS tự tạo & xoay, miễn phí), <strong>Customer managed</strong> (bạn kiểm soát policy & lịch xoay), <strong>Customer provided</strong> (tự mang key vào).</li>
+              <li>KMS có: <strong>AWS owned</strong> (SSE-S3 mặc định, miễn phí), <strong>AWS managed</strong> (<code class="inline">aws/ebs</code>, xoay 1 năm), <strong>Customer managed</strong> (bạn kiểm soát policy, xoay auto/on-demand), <strong>Imported</strong> (chỉ xoay thủ công qua alias). Symmetric (AES, service AWS dùng) vs Asymmetric (RSA/ECC — public key mang ra ngoài AWS).</li>
               <li><strong>Envelope encryption</strong>: KMS không mã hóa trực tiếp dữ liệu lớn — nó tạo 1 "data key" để mã hóa dữ liệu, rồi chính data key đó lại được mã hóa bằng CMK (giảm số lần gọi KMS API).</li>
-              <li>ACM certificate <strong>không xuất được private key</strong> ra ngoài — chỉ dùng được khi tích hợp trực tiếp với service AWS (ALB, CloudFront...).</li>
+              <li>Copy snapshot/EBS sang region khác: re-encrypt bằng KMS key của region đích. Sang account khác: key policy cho phép account kia + họ copy snapshot rồi mã hóa bằng CMK của họ.</li>
+              <li><strong>Multi-Region KMS keys</strong>: cùng key ID ở nhiều region (replica) — tiện encrypt/decrypt xuyên region mà không copy ciphertext thủ công.</li>
+              <li>ACM certificate <strong>không xuất được private key</strong> ra ngoài — chỉ dùng được khi tích hợp trực tiếp với service AWS (ALB, CloudFront...). Edge-optimized API Gateway: cert ACM phải ở <code class="inline">us-east-1</code>.</li>
               <li>Secrets Manager tính phí theo secret + số lần gọi API; Parameter Store (SSM) rẻ hơn nhưng không có rotation tự động sẵn.</li>
             </ul>
           </div>
@@ -3363,9 +3423,11 @@ npx expo start   # quét QR code bằng app Expo Go để xem trực tiếp trê
           <div class="svc-row"><span class="svc-label">Điểm quan trọng</span>
             <ul class="svc-points">
               <li><strong>Internet Gateway (IGW)</strong>: gắn 1-1 với VPC, cho phép traffic <strong>2 chiều</strong> ra vào internet — chỉ subnet nào có route tới IGW mới là "public".</li>
-              <li><strong>NAT Gateway</strong>: đặt trong public subnet, cho instance ở private subnet ra internet <strong>1 chiều</strong> (vd tải security patch) mà bên ngoài không thể chủ động kết nối vào — quản lý bởi AWS, tự scale, tính phí theo giờ + theo GB.</li>
+              <li><strong>NAT Gateway</strong>: đặt trong public subnet, cho instance ở private subnet ra internet <strong>1 chiều</strong> (vd tải security patch) mà bên ngoài không thể chủ động kết nối vào — quản lý bởi AWS, tự scale (5→100 Gbps), tính phí theo giờ + theo GB, <strong>không dùng Security Group</strong>. HA: NAT GW chỉ chịu lỗi trong 1 AZ — cần <strong>một NAT GW mỗi AZ</strong>. Không dùng cho instance cùng subnet với nó.</li>
+              <li><strong>NAT Instance</strong> (cũ): tự quản lý trên EC2, phải tắt source/dest check, dùng được làm bastion; failover phải tự script. Đề hỏi “managed, scale, ít vận hành” → NAT Gateway.</li>
               <li>Mỗi Subnet chỉ nằm trong <strong>đúng 1 AZ</strong> — muốn kiến trúc Multi-AZ phải tạo subnet riêng ở từng AZ.</li>
-              <li><strong>VPC Flow Logs</strong>: ghi lại toàn bộ traffic IP ra/vào network interface trong VPC — dùng để debug kết nối hoặc audit bảo mật.</li>
+              <li><strong>VPC Flow Logs</strong>: ghi ACCEPT/REJECT ở cấp VPC/subnet/ENI — debug hoặc Athena/Logs Insights. Không launch được EC2 thường vì <strong>hết IPv4 trong subnet</strong> (IPv6 gần như không cạn), không phải vì IPv6.</li>
+              <li><strong>Egress-only Internet Gateway</strong>: bản NAT cho <strong>IPv6</strong> — outbound IPv6, chặn inbound từ internet. IPv4 không tắt được trên VPC.</li>
             </ul>
           </div>
           <div class="svc-row"><span class="svc-label">Use case</span><p>Database cần bảo mật, không public trực tiếp nhưng vẫn cần tải patch từ internet → đặt ở private subnet + route qua NAT Gateway.</p></div>
@@ -3417,8 +3479,9 @@ npx expo start   # quét QR code bằng app Expo Go để xem trực tiếp trê
           <div class="svc-row"><span class="svc-label">Điểm quan trọng</span>
             <ul class="svc-points">
               <li><strong>VPC Peering</strong>: CIDR 2 VPC không được trùng nhau; với N VPC cần peer đầy đủ với nhau, số kết nối tăng theo cấp số nhân — khó quản lý khi N lớn.</li>
-              <li><strong>Transit Gateway</strong>: là region-based (có thể mở rộng liên Region), hỗ trợ kết nối cả VPC lẫn kết nối on-premise (qua Direct Connect/VPN), quản lý route tập trung.</li>
-              <li><strong>VPC Endpoint</strong>: <em>Gateway endpoint</em> (chỉ S3 & DynamoDB, miễn phí) hoặc <em>Interface endpoint</em> (hầu hết service khác, tính phí theo giờ) — cho phép traffic tới AWS service đi qua mạng nội bộ AWS, không ra internet công cộng.</li>
+              <li><strong>Transit Gateway</strong>: region-based (peer TGW cross-region), hỗ trợ VPC + DX + VPN, multicast, chia sẻ qua RAM. <strong>ECMP</strong> trên nhiều Site-to-Site VPN vào TGW để tăng bandwidth (mỗi VPN ~1.25 Gbps/tunnel, ECMP dùng cả 2 tunnel).</li>
+              <li><strong>VPC Endpoint</strong>: <em>Gateway endpoint</em> (chỉ S3 &amp; DynamoDB, miễn phí) hoặc <em>Interface endpoint</em> (hầu hết service khác, tính phí) — traffic AWS service không ra internet.</li>
+              <li><strong>PrivateLink / VPC Endpoint Services</strong>: exposé service của bạn cho VPC khách qua NLB + ENI, không cần peering/NAT/internet. Đề “chia sẻ API riêng tư cho nhiều account” → PrivateLink.</li>
             </ul>
           </div>
           <div class="svc-row"><span class="svc-label">Use case</span><p>Công ty có hàng chục VPC cần giao tiếp qua lại → Transit Gateway (thay vì tạo hàng chục peering connection). EC2 private subnet cần truy cập S3 mà không qua NAT/Internet → VPC Endpoint.</p></div>
@@ -3427,9 +3490,14 @@ npx expo start   # quét QR code bằng app Expo Go để xem trực tiếp trê
 
         <div class="svc-card">
           <div class="svc-name">Direct Connect vs Site-to-Site VPN</div>
-          <div class="svc-row"><span class="svc-label">Tóm tắt</span><p><strong>Direct Connect</strong>: kết nối vật lý riêng tới AWS, băng thông ổn định, không qua internet công cộng, phù hợp truyền dữ liệu lớn liên tục nhưng thời gian setup lâu (tuần/tháng). <strong>Site-to-Site VPN</strong>: thiết lập nhanh (phút), mã hóa qua internet công cộng, chi phí thấp hơn ban đầu nhưng băng thông không ổn định bằng.</p></div>
-          <div class="svc-row"><span class="svc-label">Use case</span><p>Cần backup kết nối nhanh trong lúc chờ setup Direct Connect chính → VPN. Cần truyền dữ liệu khối lượng lớn, ổn định, lâu dài giữa on-premise và AWS → Direct Connect.</p></div>
+          <div class="svc-row"><span class="svc-label">Tóm tắt</span><p><strong>Direct Connect</strong>: kết nối vật lý riêng tới AWS, băng thông ổn định, không qua internet công cộng, phù hợp truyền dữ liệu lớn liên tục nhưng thời gian setup lâu (tuần/tháng). <strong>Site-to-Site VPN</strong>: thiết lập nhanh (phút), mã hóa qua internet công cộng, chi phí thấp hơn ban đầu nhưng băng thông không ổn định bằng. DX Gateway nối 1 DX tới nhiều VPC/region; VPN CloudHub = hub-and-spoke VPN giữa các chi nhánh.</p></div>
+          <div class="svc-row"><span class="svc-label">Use case</span><p>Cần backup kết nối nhanh trong lúc chờ setup Direct Connect chính → VPN. Cần truyền dữ liệu khối lượng lớn, ổn định, lâu dài giữa on-premise và AWS → Direct Connect. Nhiều site VPN + nhiều VPC → Transit Gateway.</p></div>
           <div class="svc-row kw"><span class="svc-label">Keyword trong đề</span><p><span class="kw-chip">consistent bandwidth</span><span class="kw-chip">high data transfer volume</span><span class="kw-chip">quick to set up</span><span class="kw-chip">encrypted over the internet</span></p></div>
+        </div>
+
+        <div class="svc-mini-list">
+          <div class="mini-row"><strong>Bastion host</strong> — EC2 public để SSH nhảy vào instance private. Alternative hiện đại: <strong>SSM Session Manager</strong> (không mở port 22, không key SSH).</div>
+          <div class="mini-row"><strong>Traffic Mirroring</strong> — copy traffic từ ENI để phân tích (IDS). NACL: rule số nhỏ hơn thắng; default NACL mới là deny-all; ephemeral port outbound đừng quên.</div>
         </div>
 
         <div class="refs">
@@ -3480,9 +3548,11 @@ npx expo start   # quét QR code bằng app Expo Go để xem trực tiếp trê
 
         <div class="svc-mini-list">
           <div class="mini-row"><strong>AWS Application Migration Service (MGN)</strong> — "lift-and-shift" server on-premise/cloud khác sang EC2 gần như nguyên trạng, ít thay đổi ứng dụng.</div>
-          <div class="mini-row"><strong>AWS Database Migration Service (DMS)</strong> — migrate database gần như zero-downtime, hỗ trợ cả homogeneous (cùng engine) và heterogeneous (khác engine, cần thêm SCT).</div>
-          <div class="mini-row"><strong>AWS Snow Family</strong> — vận chuyển dữ liệu khối lượng cực lớn bằng thiết bị vật lý khi truyền qua mạng không khả thi.</div>
-          <div class="mini-row"><strong>AWS Backup</strong> — dịch vụ backup tập trung, quản lý policy backup cho nhiều service (EBS, RDS, DynamoDB, EFS...) từ 1 nơi duy nhất.</div>
+          <div class="mini-row"><strong>AWS Database Migration Service (DMS)</strong> — migrate gần như zero-downtime (full load + CDC). Homogeneous không cần SCT; heterogeneous thì SCT. Replication instance có Multi-AZ. RDS MySQL/PostgreSQL → Aurora: snapshot restore hoặc tạo Aurora Read Replica rồi promote khi lag = 0.</div>
+          <div class="mini-row"><strong>AWS Snow Family</strong> — vận chuyển PB bằng thiết bị vật lý khi mạng quá chậm (hàng trăm TB / 100 Mbps có thể mất nhiều tháng; Snow ~1 tuần cửa-tới-cửa). Kết hợp DMS được.</div>
+          <div class="mini-row"><strong>AWS DataSync</strong> — copy ongoing lớn giữa on-prem và S3/EFS/FSx (không phải one-shot Snow). VM Import/Export: đưa VM vào EC2 hoặc xuất ngược cho DR.</div>
+          <div class="mini-row"><strong>AWS Backup</strong> — backup tập trung, policy cho EBS, RDS, DynamoDB, EFS… từ 1 nơi; copy cross-region.</div>
+          <div class="mini-row"><strong>VMware Cloud on AWS</strong> — giữ vSphere, mở rộng/DR sang AWS mà không đổi toolchain VMware.</div>
         </div>
 
         <div class="refs">
@@ -3529,12 +3599,18 @@ npx expo start   # quét QR code bằng app Expo Go để xem trực tiếp trê
           <div class="svc-row"><span class="svc-label">Tóm tắt</span><p><strong>Microservices</strong>: mỗi service độc lập (thường chạy trên ECS/EKS/Lambda), giao tiếp qua API Gateway/SQS/EventBridge thay vì gọi trực tiếp — giúp scale/deploy độc lập từng phần. <strong>Event-Driven</strong>: hệ thống phản ứng theo sự kiện (S3 upload, DynamoDB Stream, EventBridge rule) thay vì polling liên tục.</p></div>
           <div class="svc-row"><span class="svc-label">Điểm quan trọng</span>
             <ul class="svc-points">
-              <li>Microservices nên giao tiếp <strong>bất đồng bộ</strong> (qua queue/event) thay vì gọi API đồng bộ trực tiếp — service lỗi/chậm không kéo sập cả hệ thống (tránh "cascading failure").</li>
-              <li>Event-Driven giúp hệ thống <strong>phản hồi tức thời</strong> và tiết kiệm chi phí hơn hẳn so với polling liên tục để kiểm tra thay đổi.</li>
-              <li>Hybrid Architecture (kết hợp on-premise + AWS qua Direct Connect/VPN/Storage Gateway) phù hợp khi chưa thể migrate 100% do ràng buộc pháp lý/kỹ thuật.</li>
+              <li>Microservices nên giao tiếp <strong>bất đồng bộ</strong> (qua queue/event) thay vì gọi API đồng bộ trực tiếp — service lỗi/chậm không kéo sập cả hệ thống (tránh "cascading failure"). Fan-out: 1 SNS → nhiều SQS (mỗi consumer 1 queue) thay vì SDK gửi lần lượt.</li>
+              <li>S3 Event Notification: Lambda/SQS/SNS, filter theo suffix (<code class="inline">*.jpg</code>), giao trong vài giây (đôi khi ~1 phút). Cần lọc JSON phức tạp, nhiều đích (Step Functions, Firehose), archive/replay → bật EventBridge trên bucket.</li>
+              <li>Event-Driven giúp hệ thống <strong>phản hồi tức thời</strong> và tiết kiệm hơn polling. Hybrid (DX/VPN/Storage Gateway) khi chưa migrate 100%.</li>
+              <li><strong>HPC</strong> hay hỏi: Placement Group Cluster + Enhanced Networking (ENA) + <strong>EFA</strong> (MPI, Linux, tightly-coupled); storage FSx for Lustre gắn S3; DataSync/DX/Snow chuyển data; Batch hoặc ParallelCluster điều phối.</li>
             </ul>
           </div>
           <div class="svc-row"><span class="svc-label">Use case</span><p>Hệ thống thương mại điện tử: service "Đặt hàng", "Thanh toán", "Kho hàng" tách biệt, giao tiếp qua EventBridge — đội ngũ mỗi service deploy độc lập không ảnh hưởng nhau.</p></div>
+        </div>
+
+        <div class="svc-card" id="a27-3">
+          <div class="svc-name">Well-Architected Framework (6 trụ)</div>
+          <div class="svc-row"><span class="svc-label">Tóm tắt</span><p>Khung thiết kế: <strong>Operational Excellence, Security, Reliability, Performance Efficiency, Cost Optimization, Sustainability</strong> — không phải đánh đổi lẫn nhau. Well-Architected Tool (miễn phí) review workload bằng câu hỏi, ra báo cáo/khuyến nghị. Trusted Advisor là check tự động theo best practice (overlap một phần).</p></div>
         </div>
 
         <div class="refs">
@@ -3556,6 +3632,7 @@ npx expo start   # quét QR code bằng app Expo Go để xem trực tiếp trê
               <li><strong>Cost Allocation Tags</strong>: gắn tag lên resource (vd <code class="inline">team=backend</code>) để Cost Explorer/CUR phân bổ chi phí chính xác theo team/dự án/môi trường.</li>
               <li>Budgets có thể trigger <strong>SNS notification</strong> hoặc tự động action (vd dừng instance) khi vượt ngưỡng đã đặt.</li>
               <li>CUR là nguồn dữ liệu chi tiết nhất (tới từng giờ, từng resource ID) — các công cụ khác chỉ là lớp trực quan hóa phía trên.</li>
+              <li>Cost Explorer dự báo tới 12 tháng và gợi ý <strong>Savings Plans</strong> (linh hoạt hơn RI). Cost Anomaly Detection dùng ML, không cần threshold thủ công.</li>
             </ul>
           </div>
           <div class="svc-row"><span class="svc-label">Use case</span><p>Muốn được cảnh báo qua email khi chi phí tháng vượt ngưỡng định trước → Budgets. Muốn biết instance nào đang over-provisioned cần resize → Compute Optimizer.</p></div>
@@ -3563,8 +3640,13 @@ npx expo start   # quét QR code bằng app Expo Go để xem trực tiếp trê
 
         <div class="svc-mini-list">
           <div class="mini-row"><strong>AWS Elastic Beanstalk</strong> — PaaS triển khai nhanh ứng dụng web (tự lo EC2, load balancer, scaling) khi không cần tùy biến sâu hạ tầng.</div>
-          <div class="mini-row"><strong>AWS Batch</strong> — chạy batch job quy mô lớn, tự quản lý compute (EC2/Fargate) phía sau.</div>
-          <div class="mini-row"><strong>AWS Outposts</strong> — mang hạ tầng AWS về chạy tại datacenter on-premise của khách hàng.</div>
+          <div class="mini-row"><strong>AWS Batch</strong> — job có đầu/cuối, Docker trên ECS, không giới hạn 15 phút như Lambda; Spot được. Lambda: short, runtime hạn chế, /tmp hạn chế.</div>
+          <div class="mini-row"><strong>AWS CloudFormation</strong> — IaC khai báo (template), tạo đúng thứ tự; ước lượng cost; xóa/tạo lại stack. Service Role + <code class="inline">iam:PassRole</code> để user tạo stack mà không cần quyền từng resource.</div>
+          <div class="mini-row"><strong>AWS Systems Manager</strong> — Session Manager (shell không SSH/port 22), Run Command, Patch Manager + Maintenance Windows, Automation runbook (Config remediation).</div>
+          <div class="mini-row"><strong>Amazon SES vs Pinpoint</strong> — SES: gửi/nhận email (transactional/bulk, SMTP/API). Pinpoint: chiến dịch đa kênh (SMS/email/push), segment, template — SNS/SES thì tự quản audience từng message.</div>
+          <div class="mini-row"><strong>AWS Outposts</strong> — rack AWS đặt on-prem (latency thấp, data residency); bạn chịu physical security. EC2/EBS/S3/ECS/EKS/RDS/EMR chạy được trên Outposts.</div>
+          <div class="mini-row"><strong>Amazon AppFlow</strong> — ETL managed SaaS → AWS (Salesforce/SAP/Zendesk → S3/Redshift), PrivateLink được. <strong>Amplify</strong>: fullstack web/mobile (Cognito, AppSync GraphQL, S3, CI/CD).</div>
+          <div class="mini-row"><strong>Cost Anomaly Detection</strong> — ML phát hiện chi tiêu bất thường, không cần tự đặt threshold (khác Budgets). Instance Scheduler (solution CloudFormation): tắt EC2/RDS ngoài giờ làm việc.</div>
         </div>
         <div class="callout"><strong>Bẫy thường gặp về chi phí:</strong> đề bài cho tình huống "chi phí thấp nhất" nhưng vẫn có ràng buộc kèm theo (vd "vẫn cần độ trễ thấp", "vẫn cần chịu lỗi") — luôn đọc kỹ ràng buộc trước khi chọn phương án rẻ nhất tuyệt đối.</div>
         <div class="refs">
@@ -5820,8 +5902,15 @@ SELECT a FROM t1 EXCEPT SELECT a FROM t2;</pre>
     {id:'a13', num:'13', vi:'CloudFront & Global Accelerator', ja:'CloudFront & Global Accelerator', subs:[]},
     {id:'a14', num:'14', vi:'AWS Storage Extras', ja:'AWS Storage Extras', subs:[]},
     {id:'a15', num:'15', vi:'AWS Integration & Messaging', ja:'AWS Integration & Messaging', subs:[]},
-    {id:'a16', num:'16', vi:'Containers on AWS', ja:'Containers on AWS', subs:[]},
-    {id:'a17', num:'17', vi:'Serverless Overview', ja:'Serverless Overview', subs:[]},
+    {id:'a16', num:'16', vi:'Containers on AWS', ja:'Containers on AWS', subs:[
+      {id:'a16-1', vi:'ECS vs EKS vs Fargate', ja:'ECS vs EKS vs Fargate'},
+      {id:'a16-2', vi:'Auto Scaling & Capacity Provider', ja:'Auto Scaling & Capacity Provider'},
+      {id:'a16-3', vi:'App Runner', ja:'App Runner'},
+    ]},
+    {id:'a17', num:'17', vi:'Serverless Overview', ja:'Serverless Overview', subs:[
+      {id:'a17-1', vi:'Lambda & API Gateway', ja:'Lambda & API Gateway'},
+      {id:'a17-2', vi:'CloudFront Functions vs Lambda@Edge', ja:'CloudFront Functions vs Lambda@Edge'},
+    ]},
     {id:'a18', num:'18', vi:'Serverless Architectures', ja:'Serverless Architectures', subs:[]},
     {id:'a19', num:'19', vi:'Databases in AWS', ja:'Databases in AWS', subs:[]},
     {id:'a20', num:'20', vi:'Data & Analytics', ja:'Data & Analytics', subs:[]},
@@ -5831,7 +5920,9 @@ SELECT a FROM t1 EXCEPT SELECT a FROM t2;</pre>
     {id:'a24', num:'24', vi:'AWS Security & Encryption', ja:'AWS Security & Encryption', subs:[]},
     {id:'a25', num:'25', vi:'Amazon VPC', ja:'Amazon VPC', subs:[]},
     {id:'a26', num:'26', vi:'Disaster Recovery & Migrations', ja:'Disaster Recovery & Migrations', subs:[]},
-    {id:'a27', num:'27', vi:'More Solutions Architecture', ja:'More Solutions Architecture', subs:[]},
+    {id:'a27', num:'27', vi:'More Solutions Architecture', ja:'More Solutions Architecture', subs:[
+      {id:'a27-3', vi:'Well-Architected Framework', ja:'Well-Architected Framework'},
+    ]},
     {id:'a28', num:'28', vi:'Other Services', ja:'Other Services', subs:[]},
     {id:'a29', num:'29', vi:'Tài liệu tham khảo', ja:'Tài liệu tham khảo', subs:[]},
   ];
